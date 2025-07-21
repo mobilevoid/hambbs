@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{{ user.username }}'s Profile</h2>
+<p>{{ user.bio }}</p>
+<p>Reputation: {{ user.reputation }}</p>
+{% if current_user.id == user.id %}
+<a class="btn btn-secondary mb-3" href="{{ url_for('main.edit_profile') }}">Edit Profile</a>
+{% endif %}
+<h3>Posts</h3>
+<ul class="list-group">
+  {% for p in posts %}
+  <li class="list-group-item">
+    <a href="{{ url_for('forums.view_forum', forum_id=p.forum.id) }}">{{ p.title }}</a>
+    <small class="text-muted">in {{ p.forum.name }} at {{ p.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}
