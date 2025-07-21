@@ -3,7 +3,7 @@ import serial
 import socket
 import threading
 import time
-from typing import Iterable, List
+from typing import Iterable, List, Callable
 
 import crcmod.predefined
 from reedsolo import RSCodec
@@ -13,8 +13,10 @@ FESC = 0xDB
 TFEND = 0xDC
 TFESC = 0xDD
 
+
 class RadioInterface:
     """Simple radio interface using a serial COM port."""
+
     def __init__(self, port, baudrate=9600, timeout=1):
         self.port = port
         self.baudrate = baudrate
@@ -39,6 +41,19 @@ class RadioInterface:
             self.open()
         return self.ser.read(size)
 
+    def is_busy(self) -> bool:
+        """Return True if the radio reports a busy channel."""
+        if not self.ser:
+            self.open()
+        busy = False
+        try:
+            busy = bool(
+                getattr(self.ser, "cts", False) or getattr(self.ser, "cd", False)
+            )
+        except Exception:
+            pass
+        return busy
+
     def negotiate_baud(self, rates: Iterable[int] = (57600, 38400, 19200, 9600)) -> int:
         """Attempt to open the serial port at the fastest working baud rate."""
         for rate in rates:
@@ -48,7 +63,9 @@ class RadioInterface:
                     resp = test.read(1)
                     if resp:
                         self.baudrate = rate
-                        self.ser = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
+                        self.ser = serial.Serial(
+                            self.port, self.baudrate, timeout=self.timeout
+                        )
                         return rate
             except serial.SerialException:
                 continue
@@ -190,7 +207,7 @@ def interleave(data: bytes, block: int = 4) -> bytes:
         return data
     pad = (-len(data)) % block
     padded = data + b"\x00" * pad
-    rows = [padded[i:i + block] for i in range(0, len(padded), block)]
+    rows = [padded[i : i + block] for i in range(0, len(padded), block)]
     out = bytearray()
     for i in range(block):
         for row in rows:
@@ -215,7 +232,7 @@ def deinterleave(data: bytes, block: int = 4) -> bytes:
 
 def chunk_data(data: bytes, size: int = 256) -> List[bytes]:
     """Split *data* into MTU-sized chunks."""
-    return [data[i:i+size] for i in range(0, len(data), size)]
+    return [data[i : i + size] for i in range(0, len(data), size)]
 
 
 class SlidingWindowARQ:
@@ -344,12 +361,13 @@ class VaraKISS:
             data = kiss_decode_stream(self.rx_buffer)
             if data:
                 end = self.rx_buffer.find(bytes([FEND]), 1)
-                self.rx_buffer = self.rx_buffer[end + 1:]
+                self.rx_buffer = self.rx_buffer[end + 1 :]
                 return data
         return b""
 
     def close(self) -> None:
         self.ser.close()
+
 
 class SimulatedVaraHF(VaraHFClient):
     """In-memory mock of :class:`VaraHFClient` for testing."""
@@ -386,3 +404,21 @@ class SimulatedVaraHF(VaraHFClient):
             self._incoming.insert(0, data[size:])
             data = data[:size]
         return data
+
+
+def opportunistic_relay(
+    queue: List[bytes], forward_fn: Callable[[bytes], None]
+) -> None:
+    """Forward queued frames to another peer if possible.
+
+    This is a very small placeholder implementation. In a real system we would
+    inspect link quality reports and only forward when the peer's path to the
+    server is better than our own.
+    """
+    for frame in list(queue):
+        try:
+            forward_fn(frame)
+            queue.remove(frame)
+        except Exception:
+            # if forwarding fails, leave the frame in the queue
+            pass
