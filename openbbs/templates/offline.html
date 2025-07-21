@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Offline BBS</title>
+  <script>
+  async function loadThreads() {
+    const res = await fetch('/api/threads');
+    const threads = await res.json();
+    const list = document.getElementById('threads');
+    list.innerHTML = '';
+    threads.forEach(t => {
+      const li = document.createElement('li');
+      li.textContent = t.title;
+      li.onclick = () => loadThread(t.id);
+      list.appendChild(li);
+    });
+  }
+  async function loadThread(id) {
+    const res = await fetch('/api/threads/' + id);
+    const data = await res.json();
+    const msgs = document.getElementById('messages');
+    msgs.innerHTML = data.messages.map(m => `<p><b>${m.author||'anon'}</b>: ${m.body}</p>`).join('');
+    document.getElementById('reply').dataset.thread=id;
+  }
+  async function send() {
+    const tid = document.getElementById('reply').dataset.thread;
+    const body = document.getElementById('body').value;
+    await fetch(`/api/threads/${tid}/messages`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})});
+    document.getElementById('body').value='';
+    loadThread(tid);
+  }
+  window.onload = loadThreads;
+  </script>
+</head>
+<body>
+<h1>Offline BBS</h1>
+<ul id="threads"></ul>
+<div id="messages"></div>
+<div>
+  <textarea id="body" rows="4" cols="40"></textarea>
+  <button id="reply" onclick="send()">Send</button>
+</div>
+</body>
+</html>

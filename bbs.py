@@ -1,6 +1,7 @@
 import argparse
 import sys
 import uuid
+import json
 from datetime import datetime
 from pathlib import Path
 import tempfile
@@ -9,7 +10,23 @@ from db import init_db, connect
 from sync import SyncEngine
 from radio import RadioInterface, SimulatedVaraHF
 
-DB_PATH = Path('openbbs.db')
+CONFIG_FILE = Path('config.json')
+DEFAULT_CONFIG = {
+    'db_path': 'openbbs.db',
+    'server_url': 'http://localhost:5000'
+}
+
+
+def load_config():
+    if CONFIG_FILE.exists():
+        with open(CONFIG_FILE) as f:
+            conf = json.load(f)
+            DEFAULT_CONFIG.update(conf)
+    return DEFAULT_CONFIG
+
+
+CONF = load_config()
+DB_PATH = Path(CONF['db_path'])
 
 
 def cmd_sync_pull(args):
@@ -29,6 +46,58 @@ def cmd_sync_push(args):
     engine = SyncEngine(str(DB_PATH))
     summary = engine.push(args.package)
     print(summary)
+
+
+def cmd_list(_):
+    init_db(DB_PATH)
+    conn = connect(DB_PATH)
+    rows = conn.execute("SELECT id, title, updated_at FROM threads ORDER BY updated_at DESC").fetchall()
+    for r in rows:
+        print(r['id'], r['title'], r['updated_at'])
+    conn.close()
+
+
+def cmd_read(args):
+    init_db(DB_PATH)
+    conn = connect(DB_PATH)
+    t = conn.execute("SELECT title FROM threads WHERE id=?", (args.thread_id,)).fetchone()
+    if not t:
+        print('thread not found')
+        return
+    print('#', t['title'])
+    msgs = conn.execute("SELECT author, body, timestamp FROM messages WHERE thread_id=? ORDER BY timestamp", (args.thread_id,)).fetchall()
+    for m in msgs:
+        print(f"[{m['timestamp']}] {m['author']}: {m['body']}")
+    conn.close()
+
+
+def cmd_post(args):
+    init_db(DB_PATH)
+    conn = connect(DB_PATH)
+    mid = str(uuid.uuid4())
+    ts = datetime.utcnow().isoformat()
+    conn.execute(
+        "INSERT INTO messages (id, thread_id, timestamp, updated_at, author, body) VALUES (?,?,?,?,?,?)",
+        (mid, args.thread_id, ts, ts, args.author, args.body)
+    )
+    conn.execute("UPDATE threads SET updated_at=? WHERE id=?", (ts, args.thread_id))
+    conn.commit()
+    conn.close()
+    print(mid)
+
+
+def cmd_new_thread(args):
+    init_db(DB_PATH)
+    conn = connect(DB_PATH)
+    tid = str(uuid.uuid4())
+    now = datetime.utcnow().isoformat()
+    conn.execute(
+        "INSERT INTO threads (id, title, created_at, updated_at) VALUES (?,?,?,?)",
+        (tid, args.title, now, now)
+    )
+    conn.commit()
+    conn.close()
+    print(tid)
 
 
 def cmd_queue_post(args):
@@ -104,6 +173,19 @@ def main():
 
     ov = outbox_sub.add_parser('view')
     ov.set_defaults(func=cmd_outbox_view)
+
+    sub.add_parser('list').set_defaults(func=cmd_list)
+    rd = sub.add_parser('read')
+    rd.add_argument('thread_id')
+    rd.set_defaults(func=cmd_read)
+    post = sub.add_parser('post')
+    post.add_argument('thread_id')
+    post.add_argument('body')
+    post.add_argument('--author', default='anon')
+    post.set_defaults(func=cmd_post)
+    nt = sub.add_parser('new')
+    nt.add_argument('title')
+    nt.set_defaults(func=cmd_new_thread)
 
     radio = sub.add_parser('radio')
     radio_sub = radio.add_subparsers(dest='radio_cmd')
