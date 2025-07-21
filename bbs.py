@@ -7,6 +7,7 @@ import tempfile
 
 from db import init_db, connect
 from sync import SyncEngine
+from radio import RadioInterface, SimulatedVaraHF
 
 DB_PATH = Path('openbbs.db')
 
@@ -60,6 +61,19 @@ def cmd_outbox_view(_):
     conn.close()
 
 
+def cmd_radio_send(args):
+    iface_cls = RadioInterface if args.mode == 'com' else SimulatedVaraHF
+    iface = iface_cls(args.port)
+    iface.send(args.message.encode('utf-8'))
+
+
+def cmd_radio_recv(args):
+    iface_cls = RadioInterface if args.mode == 'com' else SimulatedVaraHF
+    iface = iface_cls(args.port)
+    data = iface.receive()
+    sys.stdout.buffer.write(data)
+
+
 def main():
     parser = argparse.ArgumentParser(description='Hambbs CLI')
     sub = parser.add_subparsers(dest='command')
@@ -90,6 +104,20 @@ def main():
 
     ov = outbox_sub.add_parser('view')
     ov.set_defaults(func=cmd_outbox_view)
+
+    radio = sub.add_parser('radio')
+    radio_sub = radio.add_subparsers(dest='radio_cmd')
+
+    rs = radio_sub.add_parser('send')
+    rs.add_argument('port')
+    rs.add_argument('message')
+    rs.add_argument('--mode', choices=['com', 'varahf'], default='com')
+    rs.set_defaults(func=cmd_radio_send)
+
+    rr = radio_sub.add_parser('recv')
+    rr.add_argument('port')
+    rr.add_argument('--mode', choices=['com', 'varahf'], default='com')
+    rr.set_defaults(func=cmd_radio_recv)
 
     args = parser.parse_args()
     if hasattr(args, 'func'):

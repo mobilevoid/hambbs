@@ -1,4 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for
+from functools import lru_cache
 from flask_login import login_required
 from .models import Forum, Post
 from . import db
@@ -31,5 +32,10 @@ def create_forum():
 @login_required
 def view_forum(forum_id):
     forum = Forum.query.get_or_404(forum_id)
-    posts = Post.query.filter_by(forum_id=forum_id, parent_id=None).order_by(Post.timestamp.desc()).all()
+    posts = get_forum_posts(forum_id)
     return render_template('forum_view.html', forum=forum, posts=posts)
+
+
+@lru_cache(maxsize=128)
+def get_forum_posts(forum_id):
+    return Post.query.filter_by(forum_id=forum_id, parent_id=None).order_by(Post.timestamp.desc()).all()

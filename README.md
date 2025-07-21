@@ -6,11 +6,12 @@ A simple Bulletin Board System implemented in Python using Flask. It provides us
 
 - User signup and login
 - Forums with threads and replies
-- File attachments on posts
+- File attachments on posts with gzip compression
 - SQLite database via SQLAlchemy
 - Simple web interface using Bootstrap
 - Synchronization API and CLI tools
 - Search functionality for posts
+- Basic COM/VARAHF radio interface (experimental)
 
 ## Setup
 
@@ -31,4 +32,4 @@ Then open `http://localhost:5000` in your browser.
 
 ## Notes
 
-This project is still a prototype. Advanced features such as COM/VaraHF integration, data synchronization, and encrypted file storage are not implemented.
+This project is still a prototype. Radio communication via COM or VaraHF is experimental and only supports simple send/receive operations. File attachments are compressed but not encrypted.

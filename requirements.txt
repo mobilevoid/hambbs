@@ -3,3 +3,4 @@ flask_sqlalchemy
 flask_login
 werkzeug
 zstandard
+pyserial
