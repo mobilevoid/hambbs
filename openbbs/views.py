@@ -56,3 +56,16 @@ def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     posts = Post.query.filter_by(user_id=user.id).order_by(Post.timestamp.desc()).all()
     return render_template('profile.html', user=user, posts=posts)
+
+
+@main_bp.route('/search')
+@login_required
+def search():
+    query = request.args.get('q', '').strip()
+    results = []
+    if query:
+        like = f"%{query}%"
+        results = Post.query.filter(
+            Post.title.ilike(like) | Post.body.ilike(like)
+        ).order_by(Post.timestamp.desc()).all()
+    return render_template('search.html', query=query, results=results)

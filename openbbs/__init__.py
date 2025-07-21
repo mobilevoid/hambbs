@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from pathlib import Path
 
-from ..db import init_db
+from db import init_db
 
 # Database instance
 DB_NAME = 'openbbs.db'

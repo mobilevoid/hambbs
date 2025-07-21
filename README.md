@@ -9,6 +9,8 @@ A simple Bulletin Board System implemented in Python using Flask. It provides us
 - File attachments on posts
 - SQLite database via SQLAlchemy
 - Simple web interface using Bootstrap
+- Synchronization API and CLI tools
+- Search functionality for posts
 
 ## Setup
 
