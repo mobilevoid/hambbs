@@ -14,6 +14,7 @@ Additional usage information is available in [docs/USAGE.md](docs/USAGE.md).
 - Synchronization API and CLI tools
 - Search functionality for posts
 - Basic COM/VaraHF radio interface with optional KISS framing
+- Support for VARA Terminal's KISS serial mode via `VaraKISS`
 - REST API for threads/messages and lightweight offline UI
 - Local SQLite storage with sync log
 
@@ -48,4 +49,4 @@ python bbs.py sync push package.tar.zst
 
 ## Notes
 
-This project is still a prototype. Radio communication now supports the VaraHF modem over TCP and includes a basic KISS TNC compatibility layer. File attachments are compressed but not encrypted.
+This project is still a prototype. Radio communication now supports the VaraHF modem over TCP and includes a basic KISS TNC compatibility layer. The new `VaraKISS` helper lets you talk to VARA Terminal in its KISS serial mode. File attachments are compressed but not encrypted.
