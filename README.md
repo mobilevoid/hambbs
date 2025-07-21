@@ -2,6 +2,8 @@
 
 A simple Bulletin Board System implemented in Python using Flask. It provides user authentication and message posting with basic forum support.
 
+Additional usage information is available in [docs/USAGE.md](docs/USAGE.md).
+
 ## Features
 
 - User signup and login
