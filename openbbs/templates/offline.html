@@ -12,13 +12,14 @@
     threads.forEach(t => {
       const li = document.createElement('li');
       li.textContent = t.title;
-      li.onclick = () => loadThread(t.id);
+      li.onclick = () => loadThread(t.id, t.title);
       list.appendChild(li);
     });
   }
-  async function loadThread(id) {
+  async function loadThread(id, title) {
     const res = await fetch('/api/threads/' + id);
     const data = await res.json();
+    document.getElementById('current').textContent = title || data.thread.title;
     const msgs = document.getElementById('messages');
     msgs.innerHTML = data.messages.map(m => `<p><b>${m.author||'anon'}</b>: ${m.body}</p>`).join('');
     document.getElementById('reply').dataset.thread=id;
@@ -26,7 +27,8 @@
   async function send() {
     const tid = document.getElementById('reply').dataset.thread;
     const body = document.getElementById('body').value;
-    await fetch(`/api/threads/${tid}/messages`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({body})});
+    const author = document.getElementById('author').value;
+    await fetch(`/api/threads/${tid}/messages`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({body, author})});
     document.getElementById('body').value='';
     loadThread(tid);
   }
@@ -36,8 +38,10 @@
 <body>
 <h1>Offline BBS</h1>
 <ul id="threads"></ul>
+<h2 id="current"></h2>
 <div id="messages"></div>
 <div>
+  <input id="author" type="text" placeholder="Name" />
   <textarea id="body" rows="4" cols="40"></textarea>
   <button id="reply" onclick="send()">Send</button>
 </div>

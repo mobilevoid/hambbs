@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
+<a class="btn btn-link" href="{{ url_for('forums.list_forums') }}">&larr; Back to Forums</a>
 <h2>{{ forum.name }}</h2>
 <p>{{ forum.description }}</p>
 <form method="post" action="{{ url_for('main.create_post') }}" enctype="multipart/form-data" class="mb-3">
