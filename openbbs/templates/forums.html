@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Forums</h2>
+<a class="btn btn-primary mb-3" href="{{ url_for('forums.create_forum') }}">Create Forum</a>
+<ul class="list-group">
+  {% for f in forums %}
+  <li class="list-group-item">
+    <a href="{{ url_for('forums.view_forum', forum_id=f.id) }}">{{ f.name }}</a>
+    <p class="small text-muted">{{ f.description }}</p>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}
