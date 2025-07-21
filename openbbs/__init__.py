@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from pathlib import Path
 
+from ..db import init_db
+
 # Database instance
 DB_NAME = 'openbbs.db'
 db = SQLAlchemy()
@@ -25,6 +27,7 @@ def create_app():
     with app.app_context():
         Path(app.config['UPLOAD_FOLDER']).mkdir(exist_ok=True)
         db.create_all()
+        init_db(DB_NAME)
 
     from .auth import auth_bp
     from .views import main_bp
@@ -32,5 +35,7 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(forums_bp)
+    from .sync_api import sync_bp
+    app.register_blueprint(sync_bp)
 
     return app
