@@ -96,6 +96,7 @@ class SyncEngine:
         cur = conn.cursor()
         imported_threads = 0
         imported_msgs = 0
+        thread_updates = {}
         for t in index:
             try:
                 cur.execute(
@@ -110,6 +111,7 @@ class SyncEngine:
             if msgs_path.exists():
                 with open(msgs_path) as mf:
                     msgs = json.load(mf)
+                max_upd = t['updated_at']
                 for m in msgs:
                     existing = cur.execute("SELECT updated_at FROM messages WHERE id=?", (m['id'],)).fetchone()
                     if existing:
@@ -125,11 +127,17 @@ class SyncEngine:
                             (m['id'], m['thread_id'], m['timestamp'], m.get('updated_at', m['timestamp']), m.get('author'), m['body'])
                         )
                     imported_msgs += 1
-                    # update thread timestamp whenever a message is newer
-                    cur.execute(
-                        "UPDATE threads SET updated_at=? WHERE id=? AND updated_at<?",
-                        (m.get('updated_at', m['timestamp']), t['id'], m.get('updated_at', m['timestamp']))
-                    )
+                    m_upd = m.get('updated_at', m['timestamp'])
+                    if m_upd > max_upd:
+                        max_upd = m_upd
+                thread_updates[t['id']] = max_upd
+            else:
+                thread_updates.setdefault(t['id'], t['updated_at'])
+        for tid, ts in thread_updates.items():
+            cur.execute(
+                "UPDATE threads SET updated_at=? WHERE id=? AND updated_at<?",
+                (ts, tid, ts)
+            )
         conn.commit()
         conn.close()
         logger.info('Push completed: %d threads, %d messages', imported_threads, imported_msgs)

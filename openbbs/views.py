@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, request, redirect, url_for, current_app, send_from_directory
+from flask import Blueprint, render_template, request, redirect, url_for, current_app, send_from_directory, send_file
 import gzip
 import tempfile
+import io
 from flask_login import login_required, current_user
 from .models import Post, Forum, Attachment, User
 from . import db
@@ -47,15 +48,14 @@ def create_post():
 @main_bp.route('/attachment/<int:att_id>')
 @login_required
 def get_attachment(att_id):
+    """Return the attachment file, decompressing in memory when needed."""
     att = Attachment.query.get_or_404(att_id)
     path = Path(att.filename)
     if path.suffix == '.gz':
         with gzip.open(path, 'rb') as f:
             data = f.read()
-        tmp = Path(tempfile.NamedTemporaryFile(delete=False).name)
-        tmp.write_bytes(data)
-        return send_from_directory(tmp.parent, tmp.name, as_attachment=True,
-                                   download_name=att.original_name)
+        return send_file(io.BytesIO(data), as_attachment=True,
+                         download_name=att.original_name)
     return send_from_directory(path.parent, path.name, as_attachment=True,
                                download_name=att.original_name)
 
