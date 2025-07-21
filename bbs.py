@@ -8,7 +8,7 @@ import tempfile
 
 from db import init_db, connect
 from sync import SyncEngine
-from radio import RadioInterface, SimulatedVaraHF
+from radio import RadioInterface, VaraHFClient, KISSTnc
 
 CONFIG_FILE = Path('config.json')
 DEFAULT_CONFIG = {
@@ -130,16 +130,30 @@ def cmd_outbox_view(_):
     conn.close()
 
 
+def _create_iface(mode, port):
+    if mode == 'varahf':
+        host, *p = port.split(':')
+        p = int(p[0]) if p else 8300
+        return VaraHFClient(host, p)
+    return RadioInterface(port)
+
+
 def cmd_radio_send(args):
-    iface_cls = RadioInterface if args.mode == 'com' else SimulatedVaraHF
-    iface = iface_cls(args.port)
-    iface.send(args.message.encode('utf-8'))
+    iface = _create_iface(args.mode, args.port)
+    if args.kiss:
+        iface = KISSTnc(iface)
+        iface.send_packet(args.message.encode('utf-8'))
+    else:
+        iface.send(args.message.encode('utf-8'))
 
 
 def cmd_radio_recv(args):
-    iface_cls = RadioInterface if args.mode == 'com' else SimulatedVaraHF
-    iface = iface_cls(args.port)
-    data = iface.receive()
+    iface = _create_iface(args.mode, args.port)
+    if args.kiss:
+        iface = KISSTnc(iface)
+        data = iface.receive_packet()
+    else:
+        data = iface.receive()
     sys.stdout.buffer.write(data)
 
 
@@ -194,11 +208,13 @@ def main():
     rs.add_argument('port')
     rs.add_argument('message')
     rs.add_argument('--mode', choices=['com', 'varahf'], default='com')
+    rs.add_argument('--kiss', action='store_true', help='use KISS framing')
     rs.set_defaults(func=cmd_radio_send)
 
     rr = radio_sub.add_parser('recv')
     rr.add_argument('port')
     rr.add_argument('--mode', choices=['com', 'varahf'], default='com')
+    rr.add_argument('--kiss', action='store_true', help='use KISS framing')
     rr.set_defaults(func=cmd_radio_recv)
 
     args = parser.parse_args()
