@@ -4,7 +4,7 @@ from flask import Blueprint, request, send_file, jsonify
 from pathlib import Path
 from . import db as sqldb  # SQLAlchemy instance not used but required for models
 from ..sync import SyncEngine
-from ..db import init_db
+from db import init_db
 
 sync_bp = Blueprint('sync_api', __name__, url_prefix='/api/sync')
 
