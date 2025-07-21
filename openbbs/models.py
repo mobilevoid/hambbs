@@ -2,6 +2,7 @@ from . import db, login_manager
 from flask_login import UserMixin
 from datetime import datetime
 from sqlalchemy import UniqueConstraint
+main
 
 
 class User(db.Model, UserMixin):
@@ -11,7 +12,9 @@ class User(db.Model, UserMixin):
     bio = db.Column(db.Text, default="")
     reputation = db.Column(db.Integer, default=0)
     posts = db.relationship('Post', backref='author', lazy=True)
+
     upvotes = db.relationship('Upvote', backref='user', lazy=True)
+
 
 
 class Forum(db.Model):
@@ -36,6 +39,7 @@ class Post(db.Model):
     @property
     def score(self):
         return len(self.upvotes)
+main
 
 
 class Attachment(db.Model):
@@ -43,6 +47,7 @@ class Attachment(db.Model):
     filename = db.Column(db.String(255), nullable=False)
     original_name = db.Column(db.String(255), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+
 
 
 class Upvote(db.Model):
@@ -53,6 +58,7 @@ class Upvote(db.Model):
                                          name='unique_upvote'),)
 
 
+main
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))

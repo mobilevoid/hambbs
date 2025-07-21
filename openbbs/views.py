@@ -1,6 +1,9 @@
 from flask import Blueprint, render_template, request, redirect, url_for, current_app, send_from_directory
 from flask_login import login_required, current_user
 from .models import Post, Forum, Attachment, User, Upvote
+
+from .models import Post, Forum, Attachment, User
+main
 from . import db
 from werkzeug.utils import secure_filename
 from pathlib import Path
@@ -57,7 +60,6 @@ def profile(username):
     posts = Post.query.filter_by(user_id=user.id).order_by(Post.timestamp.desc()).all()
     return render_template('profile.html', user=user, posts=posts)
 
-
 @main_bp.route('/profile/edit', methods=['GET', 'POST'])
 @login_required
 def edit_profile():
@@ -80,3 +82,4 @@ def upvote(post_id):
         post.author.reputation += 1
         db.session.commit()
     return redirect(request.referrer or url_for('main.index'))
+main

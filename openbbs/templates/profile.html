@@ -6,6 +6,7 @@
 {% if current_user.id == user.id %}
 <a class="btn btn-secondary mb-3" href="{{ url_for('main.edit_profile') }}">Edit Profile</a>
 {% endif %}
+main
 <h3>Posts</h3>
 <ul class="list-group">
   {% for p in posts %}

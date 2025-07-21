@@ -32,3 +32,4 @@ Then open `http://localhost:5000` in your browser.
 ## Notes
 
 This project is still a prototype. Advanced features such as COM/VaraHF integration, a dedicated client, and encrypted file storage are not implemented.
+
