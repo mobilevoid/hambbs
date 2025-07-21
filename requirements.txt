@@ -4,3 +4,5 @@ flask_login
 werkzeug
 zstandard
 pyserial
+reedsolo
+crcmod
