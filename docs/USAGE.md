@@ -34,12 +34,21 @@ The application exposes a lightweight REST API. The file `offline.html` in `open
 
 ## Radio Support
 
-`radio.py` provides a simple COM port interface and a `VaraHFClient` for TCP connections to a VaraHF modem. When combined with the `KISSTnc` wrapper you can send and receive KISS encoded packets.
+`radio.py` provides a simple COM port interface and a `VaraHFClient` for TCP connections to a VaraHF modem. A convenience `VaraKISS` class is also available for talking to VARA Terminal in its KISS serial mode. When combined with the `KISSTnc` wrapper you can send and receive KISS encoded packets.
 
 Example:
 
 ```bash
 python bbs.py radio send COM3 "hello" --mode com --kiss
+```
+
+Alternatively, using `VaraKISS` directly:
+
+```python
+from radio import VaraKISS
+tnc = VaraKISS(port="COM3")
+tnc.send(b"hello")
+resp = tnc.receive()
 ```
 
 This sends a KISS framed packet on serial port `COM3`.

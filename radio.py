@@ -1,5 +1,6 @@
 import serial
 import socket
+import threading
 
 FEND = 0xC0
 FESC = 0xDB
@@ -72,6 +73,40 @@ def kiss_decode(frame: bytes) -> bytes:
     return bytes(payload)
 
 
+def kiss_decode_stream(stream: bytes) -> bytes:
+    """Extract the first complete KISS frame from *stream*.
+
+    Returns the decoded payload or ``b''`` if a complete frame has not yet
+    been received. The provided buffer is not modified.
+    """
+    buf = bytearray()
+    in_frame = False
+    escape = False
+    for b in stream:
+        if not in_frame:
+            if b == FEND:
+                in_frame = True
+                buf.clear()
+            continue
+        if escape:
+            if b == TFEND:
+                buf.append(FEND)
+            elif b == TFESC:
+                buf.append(FESC)
+            else:
+                buf.append(b)
+            escape = False
+            continue
+        if b == FESC:
+            escape = True
+            continue
+        if b == FEND:
+            # drop port byte
+            return bytes(buf[1:])
+        buf.append(b)
+    return b""
+
+
 class VaraHFClient:
     """Basic TCP client for communicating with a VaraHF modem."""
 
@@ -121,6 +156,34 @@ class KISSTnc:
             if chunk[0] == FEND and len(buf) > 1:
                 break
         return kiss_decode(bytes(buf))
+
+
+class VaraKISS:
+    """Serial-port wrapper for VARA in KISS mode."""
+
+    def __init__(self, port: str, baud: int = 9600, timeout: float = 0.1):
+        self.ser = serial.Serial(port, baud, timeout=timeout)
+        self.rx_buffer = bytearray()
+        self.lock = threading.Lock()
+
+    def send(self, payload: bytes) -> None:
+        frame = kiss_encode(payload)
+        with self.lock:
+            self.ser.write(frame)
+
+    def receive(self) -> bytes:
+        chunk = self.ser.read(4096)
+        if chunk:
+            self.rx_buffer += chunk
+            data = kiss_decode_stream(self.rx_buffer)
+            if data:
+                end = self.rx_buffer.find(bytes([FEND]), 1)
+                self.rx_buffer = self.rx_buffer[end + 1:]
+                return data
+        return b""
+
+    def close(self) -> None:
+        self.ser.close()
 
 class SimulatedVaraHF(VaraHFClient):
     """In-memory mock of :class:`VaraHFClient` for testing."""
