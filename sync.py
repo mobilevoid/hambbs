@@ -7,7 +7,7 @@ from pathlib import Path
 from datetime import datetime
 import zstandard as zstd
 
-from db import connect, init_db
+from db import connect, init_db, record_sync
 
 logger = logging.getLogger('sync')
 logger.setLevel(logging.INFO)
@@ -33,7 +33,9 @@ class SyncEngine:
         return conn
 
     def pull(self, since=None, thread_ids=None, output_path='sync.tar.zst'):
+        """Export threads/messages newer than *since* to a compressed package."""
         logger.info('Starting pull operation')
+        record_sync(self.db_path, 'pull', f'since={since}')
         conn = self._conn()
         cur = conn.cursor()
         params = []
@@ -60,7 +62,7 @@ class SyncEngine:
                 'updated_at': t['updated_at'],
             })
             msgs = cur.execute(
-                "SELECT * FROM messages WHERE thread_id=?" + (" AND timestamp>=?" if since else ""),
+                "SELECT * FROM messages WHERE thread_id=?" + (" AND updated_at>=?" if since else ""),
                 [t['id']] + ([since] if since else [])
             ).fetchall()
             msgs_data = [dict(m) for m in msgs]
@@ -80,6 +82,7 @@ class SyncEngine:
 
     def push(self, package_path):
         logger.info('Starting push operation')
+        record_sync(self.db_path, 'push', package_path)
         base = Path(tempfile.mkdtemp())
         tar_path = base / 'package.tar'
         decompressor = zstd.ZstdDecompressor()
@@ -108,15 +111,25 @@ class SyncEngine:
                 with open(msgs_path) as mf:
                     msgs = json.load(mf)
                 for m in msgs:
-                    try:
+                    existing = cur.execute("SELECT updated_at FROM messages WHERE id=?", (m['id'],)).fetchone()
+                    if existing:
+                        if existing['updated_at'] and existing['updated_at'] >= m.get('updated_at', m['timestamp']):
+                            continue
                         cur.execute(
-                            "INSERT OR IGNORE INTO messages (id, thread_id, timestamp, author, body) VALUES (?,?,?,?,?)",
-                            (m['id'], m['thread_id'], m['timestamp'], m.get('author'), m['body'])
+                            "UPDATE messages SET thread_id=?, timestamp=?, updated_at=?, author=?, body=? WHERE id=?",
+                            (m['thread_id'], m['timestamp'], m.get('updated_at', m['timestamp']), m.get('author'), m['body'], m['id'])
                         )
-                        if cur.rowcount:
-                            imported_msgs += 1
-                    except sqlite3.IntegrityError:
-                        continue
+                    else:
+                        cur.execute(
+                            "INSERT INTO messages (id, thread_id, timestamp, updated_at, author, body) VALUES (?,?,?,?,?,?)",
+                            (m['id'], m['thread_id'], m['timestamp'], m.get('updated_at', m['timestamp']), m.get('author'), m['body'])
+                        )
+                    imported_msgs += 1
+                    # update thread timestamp whenever a message is newer
+                    cur.execute(
+                        "UPDATE threads SET updated_at=? WHERE id=? AND updated_at<?",
+                        (m.get('updated_at', m['timestamp']), t['id'], m.get('updated_at', m['timestamp']))
+                    )
         conn.commit()
         conn.close()
         logger.info('Push completed: %d threads, %d messages', imported_threads, imported_msgs)

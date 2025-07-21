@@ -12,6 +12,8 @@ A simple Bulletin Board System implemented in Python using Flask. It provides us
 - Synchronization API and CLI tools
 - Search functionality for posts
 - Basic COM/VARAHF radio interface (experimental)
+- REST API for threads/messages and lightweight offline UI
+- Local SQLite storage with sync log
 
 ## Setup
 
@@ -29,6 +31,18 @@ python run.py
 ```
 
 Then open `http://localhost:5000` in your browser.
+
+### CLI usage
+
+The `bbs.py` script provides basic commands:
+
+```bash
+python bbs.py list            # list threads
+python bbs.py new "Title"     # create thread
+python bbs.py post <thread> "message" --author bob
+python bbs.py sync pull --since 2023-01-01T00:00:00
+python bbs.py sync push package.tar.zst
+```
 
 ## Notes
 

@@ -37,5 +37,7 @@ def create_app():
     app.register_blueprint(forums_bp)
     from .sync_api import sync_bp
     app.register_blueprint(sync_bp)
+    from .api import api_bp
+    app.register_blueprint(api_bp)
 
     return app

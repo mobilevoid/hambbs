@@ -21,8 +21,8 @@ def test_pull_push_cycle():
     cur = conn.cursor()
     cur.execute("INSERT INTO threads (id, title, created_at, updated_at) VALUES (?,?,?,?)",
                 ('t1', 'Thread', '2023-01-01T00:00:00', '2023-01-01T00:00:00'))
-    cur.execute("INSERT INTO messages (id, thread_id, timestamp, author, body) VALUES (?,?,?,?,?)",
-                ('m1', 't1', '2023-01-01T00:00:00', 'alice', 'hello'))
+    cur.execute("INSERT INTO messages (id, thread_id, timestamp, updated_at, author, body) VALUES (?,?,?,?,?,?)",
+                ('m1', 't1', '2023-01-01T00:00:00', '2023-01-01T00:00:00', 'alice', 'hello'))
     conn.commit()
     engine = SyncEngine(db_path)
     pkg = tempfile.NamedTemporaryFile(suffix='.tar.zst', delete=False).name
@@ -44,6 +44,7 @@ def test_pull_push_cycle():
 def test_outbox_queue_and_view(capsys):
     db_path = setup_db()
     bbs.DB_PATH = Path(db_path)
+    bbs.CONF['db_path'] = db_path
     args = type('obj', (object,), {'thread_id': 't1', 'body': 'message body'})
     cmd_queue_post(args)
     view_args = type('obj', (object,), {})
