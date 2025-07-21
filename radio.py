@@ -39,6 +39,15 @@ class RadioInterface:
             self.open()
         return self.ser.read(size)
 
+    def is_busy(self) -> bool:
+        """Return ``True`` if carrier detect is asserted."""
+        if not self.ser:
+            self.open()
+        try:
+            return bool(getattr(self.ser, "cd", False))
+        except Exception:
+            return False
+
     def negotiate_baud(self, rates: Iterable[int] = (57600, 38400, 19200, 9600)) -> int:
         """Attempt to open the serial port at the fastest working baud rate."""
         for rate in rates:

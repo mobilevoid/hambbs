@@ -33,9 +33,12 @@ class PrioritySyncQueue:
 
 class LinkScheduler:
     """Schedule periodic sync jobs respecting duty-cycle limits."""
-    def __init__(self, send_fn: Callable[[bytes], None], window: float = 60.0):
+
+    def __init__(self, send_fn: Callable[[bytes], None], window: float = 60.0,
+                 busy_check: Optional[Callable[[], bool]] = None):
         self.send_fn = send_fn
         self.window = window
+        self.busy_check = busy_check
         self.queue = PrioritySyncQueue()
         self._last_tx = 0.0
 
@@ -47,6 +50,10 @@ class LinkScheduler:
             return
         item = self.queue.pop()
         if not item:
+            return
+        if self.busy_check and self.busy_check():
+            item.next_attempt = time.time() + self.window
+            self.queue.push(item.item, item.priority)
             return
         if time.time() - self._last_tx < self.window:
             # not within allowed window yet
