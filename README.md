@@ -11,7 +11,7 @@ A simple Bulletin Board System implemented in Python using Flask. It provides us
 - Simple web interface using Bootstrap
 - Synchronization API and CLI tools
 - Search functionality for posts
-- Basic COM/VARAHF radio interface (experimental)
+- Basic COM/VaraHF radio interface with optional KISS framing
 - REST API for threads/messages and lightweight offline UI
 - Local SQLite storage with sync log
 
@@ -46,4 +46,4 @@ python bbs.py sync push package.tar.zst
 
 ## Notes
 
-This project is still a prototype. Radio communication via COM or VaraHF is experimental and only supports simple send/receive operations. File attachments are compressed but not encrypted.
+This project is still a prototype. Radio communication now supports the VaraHF modem over TCP and includes a basic KISS TNC compatibility layer. File attachments are compressed but not encrypted.
