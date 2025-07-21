@@ -6,3 +6,4 @@ zstandard
 pyserial
 reedsolo
 crcmod
+cryptography
