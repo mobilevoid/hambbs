@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Edit Profile</h2>
+<form method="post">
+  <div class="mb-3">
+    <label class="form-label">Bio</label>
+    <textarea class="form-control" name="bio" rows="4">{{ user.bio }}</textarea>
+  </div>
+  <button class="btn btn-primary" type="submit">Save</button>
+</form>
+{% endblock %}

@@ -3,6 +3,9 @@
 <h2>{{ user.username }}'s Profile</h2>
 <p>{{ user.bio }}</p>
 <p>Reputation: {{ user.reputation }}</p>
+{% if current_user.id == user.id %}
+<a class="btn btn-secondary mb-3" href="{{ url_for('main.edit_profile') }}">Edit Profile</a>
+{% endif %}
 <h3>Posts</h3>
 <ul class="list-group">
   {% for p in posts %}
