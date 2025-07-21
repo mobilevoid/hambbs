@@ -123,5 +123,37 @@ class KISSTnc:
         return kiss_decode(bytes(buf))
 
 class SimulatedVaraHF(VaraHFClient):
-    """Backward compatible alias for VaraHFClient."""
-    pass
+    """In-memory mock of :class:`VaraHFClient` for testing."""
+
+    def __init__(self, *args, **kwargs):
+        """Initialize the mock client with optional VaraHF parameters."""
+        super().__init__(*args, **kwargs)
+        self._incoming: list[bytes] = []
+        self.sent: list[bytes] = []
+
+    def feed(self, data: bytes) -> None:
+        """Provide data that will be returned by :meth:`receive`."""
+        self._incoming.append(data)
+
+    def open(self):
+        """Simulated open -- no external resources are used."""
+        self.sock = True  # sentinel so methods think we are connected
+
+    def close(self):
+        self.sock = None
+
+    def send(self, data: bytes):
+        if not self.sock:
+            self.open()
+        self.sent.append(data)
+
+    def receive(self, size=1024) -> bytes:
+        if not self.sock:
+            self.open()
+        if not self._incoming:
+            return b""
+        data = self._incoming.pop(0)
+        if len(data) > size:
+            self._incoming.insert(0, data[size:])
+            data = data[:size]
+        return data

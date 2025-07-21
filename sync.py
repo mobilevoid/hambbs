@@ -105,7 +105,7 @@ class SyncEngine:
                 if cur.rowcount:
                     imported_threads += 1
             except sqlite3.IntegrityError:
-                pass
+                logger.warning('Thread %s already exists, skipping', t['id'])
             msgs_path = base / 'threads' / f"{t['id']}.json"
             if msgs_path.exists():
                 with open(msgs_path) as mf:
