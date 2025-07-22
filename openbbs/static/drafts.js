@@ -24,7 +24,17 @@
     };
     body.addEventListener('input', save);
     if(title) title.addEventListener('input', save);
-    form.addEventListener('submit', () => localStorage.removeItem(key));
+    const warn = (e) => {
+      if(form.classList.contains('draft-exists')){
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', warn);
+    form.addEventListener('submit', () => {
+      localStorage.removeItem(key);
+      window.removeEventListener('beforeunload', warn);
+    });
   }
 
   function setupPreview(form){
@@ -64,9 +74,36 @@
     });
   }
 
+  function setupShortcuts(){
+    document.addEventListener('keydown', (e) => {
+      if(e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      const key = e.key.toLowerCase();
+      if(key === 'n'){
+        const el = document.getElementById('new-topic-title');
+        if(el){
+          e.preventDefault();
+          el.focus();
+        }
+      } else if(key === 'e'){
+        const edit = document.querySelector('.shortcut-edit');
+        if(edit){
+          e.preventDefault();
+          edit.click();
+        }
+      } else if(key === 'f'){
+        const flag = document.querySelector('.shortcut-flag');
+        if(flag){
+          e.preventDefault();
+          flag.submit();
+        }
+      }
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('form.autosave').forEach(setupDraft);
     document.querySelectorAll('form').forEach(setupPreview);
     setupThreadSearch();
+    setupShortcuts();
   });
 })();
