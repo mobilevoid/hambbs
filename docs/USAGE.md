@@ -5,7 +5,7 @@ This guide provides an overview of running the server, using the web interface a
 ## Starting the Server
 
 1. Install the dependencies listed in `requirements.txt`.
-2. Run `python run.py` to start the Flask development server.
+2. Run `python run.py` to start the server.
 3. Navigate to `http://localhost:5000` in your browser.
 
 On first launch you can sign up for a new account. Forums and posts are stored in a local SQLite database `openbbs.db`.
@@ -26,7 +26,7 @@ Run `python bbs.py --help` for all options.
 
 ## Offline Mode
 
-The application exposes a lightweight REST API. The file `offline.html` in `openbbs/templates` demonstrates a minimal offline-capable UI that consumes this API. It can be saved and used in environments without the main web interface.
+The application exposes a lightweight REST API. The file `offline.html` in `openbbs/templates` provides an offline-capable UI that consumes this API. It can be saved and used in environments without the main web interface.
 
 ## Synchronization Packages
 
