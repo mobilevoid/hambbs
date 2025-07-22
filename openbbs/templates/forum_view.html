@@ -4,12 +4,12 @@
 <h2>{{ forum.name }}</h2>
 <p>{{ forum.description }}</p>
 <div class="mb-3">
-  <input class="form-control" type="text" id="thread-search" placeholder="Search this thread">
+  <input class="form-control" type="text" id="thread-search" aria-label="Search within thread" placeholder="Search this thread">
 </div>
 <form method="post" action="{{ url_for('main.create_post') }}" enctype="multipart/form-data" class="mb-3 autosave" data-key="forum{{ forum.id }}-new">
   <input type="hidden" name="forum_id" value="{{ forum.id }}">
   <div class="mb-3">
-    <input class="form-control" type="text" name="title" placeholder="Title" required>
+    <input class="form-control" id="new-topic-title" type="text" name="title" placeholder="Title" required>
   </div>
   <div class="mb-3">
     <textarea class="form-control" name="body" rows="4" placeholder="Message" required></textarea>
@@ -21,7 +21,7 @@
   <div class="mb-3">
     <input class="form-control" type="file" name="attachment">
   </div>
-  <span class="draft-indicator">Draft saved</span>
+  <span class="draft-indicator">You have an unsaved draft</span>
   <button class="btn btn-success" type="submit">Post</button>
 </form>
 <ul class="list-group" id="posts-list">
@@ -44,7 +44,7 @@
     <p>{{ post.body }}</p>
     {% if current_user.is_authenticated and (current_user.is_moderator or current_user.id == post.user_id) %}
     <div class="mb-2">
-      <a href="{{ url_for('main.edit_post', post_id=post.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+      <a href="{{ url_for('main.edit_post', post_id=post.id) }}" class="btn btn-sm btn-outline-primary shortcut-edit">Edit</a>
       <form method="post" action="{{ url_for('main.delete_post', post_id=post.id) }}" class="d-inline">
         <input type="hidden" name="token" value="{{ action_token(post.id) }}">
         <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
@@ -60,7 +60,7 @@
       </form>
       {% endif %}
       {% if current_user.is_authenticated and current_user.id != post.user_id %}
-      <form method="post" action="{{ url_for('main.flag_post', post_id=post.id) }}" class="d-inline ms-1">
+      <form method="post" action="{{ url_for('main.flag_post', post_id=post.id) }}" class="d-inline ms-1 shortcut-flag">
         <input type="hidden" name="token" value="{{ action_token(post.id) }}">
         <button class="btn btn-sm btn-outline-warning" type="submit">Flag</button>
       </form>
@@ -90,7 +90,7 @@
         {% endfor %}
         {% if current_user.is_authenticated and (current_user.is_moderator or current_user.id == reply.user_id) %}
         <div class="mb-2">
-          <a href="{{ url_for('main.edit_post', post_id=reply.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+          <a href="{{ url_for('main.edit_post', post_id=reply.id) }}" class="btn btn-sm btn-outline-primary shortcut-edit">Edit</a>
           <form method="post" action="{{ url_for('main.delete_post', post_id=reply.id) }}" class="d-inline">
             <input type="hidden" name="token" value="{{ action_token(reply.id) }}">
             <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
@@ -117,7 +117,7 @@
       <div class="mb-2">
         <input class="form-control" type="file" name="attachment">
       </div>
-      <span class="draft-indicator">Draft saved</span>
+      <span class="draft-indicator">You have an unsaved draft</span>
       <button class="btn btn-secondary btn-sm" type="submit">Reply</button>
     </form>
     {% else %}
