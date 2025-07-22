@@ -32,17 +32,50 @@
     document.getElementById('body').value='';
     loadThread(tid);
   }
+  async function createThread() {
+    const title = document.getElementById('newtitle').value;
+    const body = document.getElementById('newbody').value;
+    const author = document.getElementById('newauthor').value;
+    const res = await fetch('/api/threads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title })
+    });
+    const data = await res.json();
+    if (data.id) {
+      await fetch(`/api/threads/${data.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body, author })
+      });
+    }
+    document.getElementById('newtitle').value = '';
+    document.getElementById('newbody').value = '';
+    loadThreads();
+  }
   window.onload = loadThreads;
   </script>
 </head>
 <body>
 <h1>Offline BBS</h1>
+<section>
+  <h2>Create Thread</h2>
+  <label for="newtitle">Title</label><br>
+  <input id="newtitle" type="text"><br>
+  <label for="newauthor">Name</label><br>
+  <input id="newauthor" type="text"><br>
+  <label for="newbody">Message</label><br>
+  <textarea id="newbody" rows="4" cols="40"></textarea><br>
+  <button onclick="createThread()">Create</button>
+</section>
 <ul id="threads"></ul>
 <h2 id="current"></h2>
 <div id="messages"></div>
 <div>
-  <input id="author" type="text" placeholder="Name" />
-  <textarea id="body" rows="4" cols="40"></textarea>
+  <label for="author">Name</label><br>
+  <input id="author" type="text"><br>
+  <label for="body">Message</label><br>
+  <textarea id="body" rows="4" cols="40"></textarea><br>
   <button id="reply" onclick="send()">Send</button>
 </div>
 </body>
