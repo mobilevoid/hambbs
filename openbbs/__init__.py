@@ -34,7 +34,7 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
 
-    from .models import User, Post, Forum, Attachment
+    from .models import User, Post, Forum, Attachment, Flag
 
     with app.app_context():
         Path(app.config['UPLOAD_FOLDER']).mkdir(exist_ok=True)
@@ -46,6 +46,9 @@ def create_app():
             db.session.commit()
         if 'is_pinned' not in [c['name'] for c in insp.get_columns('post')]:
             db.session.execute(text('ALTER TABLE post ADD COLUMN is_pinned BOOLEAN DEFAULT 0'))
+            db.session.commit()
+        if 'is_locked' not in [c['name'] for c in insp.get_columns('post')]:
+            db.session.execute(text('ALTER TABLE post ADD COLUMN is_locked BOOLEAN DEFAULT 0'))
             db.session.commit()
         init_db(DB_NAME)
 

@@ -12,6 +12,7 @@ class User(db.Model, UserMixin):
     is_moderator = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     posts = db.relationship('Post', backref='author', lazy=True)
+    flags = db.relationship('Flag', backref='reporter', lazy=True)
 
 
 class Forum(db.Model):
@@ -29,12 +30,14 @@ class Post(db.Model):
     edited_at = db.Column(db.DateTime)
     deleted = db.Column(db.Boolean, default=False)
     is_pinned = db.Column(db.Boolean, default=False)
+    is_locked = db.Column(db.Boolean, default=False)
     owner_token = db.Column(db.String(64))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     forum_id = db.Column(db.Integer, db.ForeignKey('forum.id'), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('post.id'))
     children = db.relationship('Post', backref=db.backref('parent', remote_side=[id]), lazy=True)
     attachments = db.relationship('Attachment', backref='post', lazy=True)
+    flags = db.relationship('Flag', backref='post', lazy=True)
 
 
 class Attachment(db.Model):
@@ -42,6 +45,15 @@ class Attachment(db.Model):
     filename = db.Column(db.String(255), nullable=False)
     original_name = db.Column(db.String(255), nullable=False)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+
+
+class Flag(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    reason = db.Column(db.String(255))
+    resolved = db.Column(db.Boolean, default=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
 
 @login_manager.user_loader

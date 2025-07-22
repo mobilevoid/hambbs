@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Flagged Posts</h2>
+<ul class="list-group">
+  {% for flg in flags %}
+  <li class="list-group-item">
+    <h6>{{ flg.post.title }} by {{ flg.post.author.username }} - flagged by {{ flg.reporter.username }}</h6>
+    <p>{{ flg.reason }}</p>
+    <form method="post" action="{{ url_for('main.resolve_flag', flag_id=flg.id) }}" class="d-inline">
+      <input type="hidden" name="token" value="{{ action_token(flg.post.id) }}">
+      <button class="btn btn-sm btn-outline-success" type="submit">Resolve</button>
+    </form>
+    <a href="{{ url_for('forums.view_forum', forum_id=flg.post.forum_id) }}" class="btn btn-sm btn-link">View</a>
+  </li>
+  {% else %}
+  <li class="list-group-item">No flags</li>
+  {% endfor %}
+</ul>
+{% endblock %}
