@@ -7,3 +7,4 @@ pyserial
 reedsolo
 crcmod
 cryptography
+markdown

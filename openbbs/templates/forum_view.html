@@ -3,6 +3,9 @@
 <a class="btn btn-link" href="{{ url_for('forums.list_forums') }}">&larr; Back to Forums</a>
 <h2>{{ forum.name }}</h2>
 <p>{{ forum.description }}</p>
+<div class="mb-3">
+  <input class="form-control" type="text" id="thread-search" placeholder="Search this thread">
+</div>
 <form method="post" action="{{ url_for('main.create_post') }}" enctype="multipart/form-data" class="mb-3 autosave" data-key="forum{{ forum.id }}-new">
   <input type="hidden" name="forum_id" value="{{ forum.id }}">
   <div class="mb-3">
@@ -12,14 +15,18 @@
     <textarea class="form-control" name="body" rows="4" placeholder="Message" required></textarea>
   </div>
   <div class="mb-3">
+    <button class="btn btn-outline-secondary preview-btn" type="button">Preview</button>
+  </div>
+  <div class="preview border p-2 mb-3 d-none"></div>
+  <div class="mb-3">
     <input class="form-control" type="file" name="attachment">
   </div>
   <span class="draft-indicator">Draft saved</span>
   <button class="btn btn-success" type="submit">Post</button>
 </form>
-<ul class="list-group">
+<ul class="list-group" id="posts-list">
   {% for post in posts %}
-  <li class="list-group-item">
+  <li class="list-group-item post-item">
     {% if post.deleted %}
     <p class="fst-italic text-muted">This post has been deleted</p>
     {% else %}
@@ -103,6 +110,10 @@
       <div class="mb-2">
         <textarea class="form-control" name="body" rows="2" placeholder="Reply" required></textarea>
       </div>
+      <div class="mb-2">
+        <button class="btn btn-outline-secondary btn-sm preview-btn" type="button">Preview</button>
+      </div>
+      <div class="preview border p-2 mb-2 d-none"></div>
       <div class="mb-2">
         <input class="form-control" type="file" name="attachment">
       </div>

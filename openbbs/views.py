@@ -11,6 +11,7 @@ from .models import Post, Forum, Attachment, User, Flag
 from . import db
 from werkzeug.utils import secure_filename
 from pathlib import Path
+import markdown
 
 main_bp = Blueprint('main', __name__)
 
@@ -69,6 +70,15 @@ def verify_owner_token(post: Post) -> bool:
         return False
     expected = generate_owner_token(post.id, post.user_id)
     return hmac.compare_digest(expected, post.owner_token)
+
+
+@main_bp.route('/preview', methods=['POST'])
+@login_required
+def preview_markdown():
+    """Return HTML preview for provided markdown text."""
+    text = request.get_json(force=True).get('text', '')
+    html = markdown.markdown(text)
+    return {'html': html}
 
 
 
