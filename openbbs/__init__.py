@@ -41,7 +41,7 @@ def create_app():
         init_db(DB_NAME)
 
     from .auth import auth_bp
-    from .views import main_bp
+    from .views import main_bp, generate_action_token
     from .forums import forums_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -50,5 +50,16 @@ def create_app():
     app.register_blueprint(sync_bp)
     from .api import api_bp
     app.register_blueprint(api_bp)
+
+    @app.context_processor
+    def inject_action_token():
+        from flask_login import current_user
+
+        def action_token(post_id: int) -> str:
+            if not current_user.is_authenticated:
+                return ""
+            return generate_action_token(post_id, current_user.id)
+
+        return {"action_token": action_token}
 
     return app
