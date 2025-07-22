@@ -2,6 +2,7 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from pathlib import Path
+from cryptography.fernet import Fernet
 
 from db import init_db
 
@@ -18,6 +19,16 @@ def create_app():
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['UPLOAD_FOLDER'] = str(Path('uploads'))
+    app.config['ENCRYPTION_KEY_PATH'] = str(Path('encryption.key'))
+
+    def load_enc_key(path: Path) -> bytes:
+        if path.exists():
+            return path.read_bytes()
+        key = Fernet.generate_key()
+        path.write_bytes(key)
+        return key
+
+    app.config['ENCRYPTION_KEY'] = load_enc_key(Path(app.config['ENCRYPTION_KEY_PATH']))
 
     db.init_app(app)
     login_manager.init_app(app)
