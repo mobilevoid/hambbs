@@ -59,6 +59,7 @@
         <input type="hidden" name="token" value="{{ action_token(post.id) }}">
         <button class="btn btn-sm btn-outline-secondary" type="submit">{{ 'Unlock' if post.is_locked else 'Lock' }}</button>
       </form>
+      <a href="{{ url_for('main.move_post', post_id=post.id) }}" class="btn btn-sm btn-outline-secondary ms-1">Move</a>
       {% endif %}
       {% if current_user.is_authenticated and current_user.id != post.user_id %}
       <form method="post" action="{{ url_for('main.flag_post', post_id=post.id) }}" class="d-inline ms-1 shortcut-flag">
