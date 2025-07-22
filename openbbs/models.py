@@ -9,6 +9,7 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(150), nullable=False)
     bio = db.Column(db.Text, default="")
     reputation = db.Column(db.Integer, default=0)
+    is_moderator = db.Column(db.Boolean, default=False)
     posts = db.relationship('Post', backref='author', lazy=True)
 
 
@@ -24,6 +25,8 @@ class Post(db.Model):
     title = db.Column(db.String(255), nullable=False)
     body = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    edited_at = db.Column(db.DateTime)
+    deleted = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     forum_id = db.Column(db.Integer, db.ForeignKey('forum.id'), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('post.id'))

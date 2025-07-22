@@ -4,6 +4,7 @@ import tempfile
 import io
 from cryptography.fernet import Fernet
 from flask_login import login_required, current_user
+from datetime import datetime
 from .models import Post, Forum, Attachment, User
 from . import db
 from werkzeug.utils import secure_filename
@@ -26,6 +27,15 @@ def encrypt_attachment(data: bytes) -> bytes:
 def decrypt_attachment(data: bytes) -> bytes:
     decrypted = _fernet().decrypt(data)
     return gzip.decompress(decrypted)
+
+
+def _can_modify(post: Post) -> bool:
+    """Return True if current user can edit or delete the post."""
+    if not current_user.is_authenticated:
+        return False
+    if current_user.is_moderator:
+        return True
+    return post.user_id == current_user.id
 
 
 @main_bp.route('/')
@@ -59,9 +69,56 @@ def create_post():
             att = Attachment(filename=str(dest), original_name=filename, post=post)
             db.session.add(att)
         db.session.commit()
+        try:
+            from .forums import get_forum_posts
+            get_forum_posts.cache_clear()
+        except Exception:
+            pass
     if forum_id:
         return redirect(url_for('forums.view_forum', forum_id=forum_id))
     return redirect(url_for('main.index'))
+
+
+@main_bp.route('/post/<int:post_id>/edit', methods=['GET', 'POST'])
+@login_required
+def edit_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if not _can_modify(post) or post.deleted:
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    if request.method == 'POST':
+        title = request.form.get('title')
+        body = request.form.get('body')
+        if title and body:
+            post.title = title
+            post.body = body
+            post.edited_at = datetime.utcnow()
+            db.session.commit()
+            try:
+                from .forums import get_forum_posts
+                get_forum_posts.cache_clear()
+            except Exception:
+                pass
+            return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    return render_template('edit_post.html', post=post)
+
+
+@main_bp.route('/post/<int:post_id>/delete', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if not _can_modify(post):
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    if current_user.is_moderator:
+        db.session.delete(post)
+    else:
+        post.deleted = True
+    db.session.commit()
+    try:
+        from .forums import get_forum_posts
+        get_forum_posts.cache_clear()
+    except Exception:
+        pass
+    return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
 
 
 @main_bp.route('/attachment/<int:att_id>')
@@ -88,7 +145,7 @@ def get_attachment(att_id):
 @login_required
 def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
-    posts = Post.query.filter_by(user_id=user.id).order_by(Post.timestamp.desc()).all()
+    posts = Post.query.filter_by(user_id=user.id, deleted=False).order_by(Post.timestamp.desc()).all()
     return render_template('profile.html', user=user, posts=posts)
 
 
@@ -96,10 +153,16 @@ def profile(username):
 @login_required
 def search():
     query = request.args.get('q', '').strip()
+    author_q = request.args.get('author', '').strip()
     results = []
     if query:
         like = f"%{query}%"
-        results = Post.query.filter(
-            Post.title.ilike(like) | Post.body.ilike(like)
-        ).order_by(Post.timestamp.desc()).all()
+        q = Post.query.filter(
+            (Post.title.ilike(like) | Post.body.ilike(like)) & (Post.deleted == False)
+        )
+        if author_q:
+            user = User.query.filter(User.username.ilike(author_q)).first()
+            if user:
+                q = q.filter(Post.user_id == user.id)
+        results = q.order_by(Post.timestamp.desc()).all()
     return render_template('search.html', query=query, results=results)

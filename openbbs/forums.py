@@ -38,4 +38,4 @@ def view_forum(forum_id):
 
 @lru_cache(maxsize=128)
 def get_forum_posts(forum_id):
-    return Post.query.filter_by(forum_id=forum_id, parent_id=None).order_by(Post.timestamp.desc()).all()
+    return Post.query.filter_by(forum_id=forum_id, parent_id=None, deleted=False).order_by(Post.timestamp.desc()).all()

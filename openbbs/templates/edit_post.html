@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Edit Post</h2>
+<form method="post">
+  <div class="mb-3">
+    <input class="form-control" type="text" name="title" value="{{ post.title }}" required>
+  </div>
+  <div class="mb-3">
+    <textarea class="form-control" name="body" rows="4" required>{{ post.body }}</textarea>
+  </div>
+  <button class="btn btn-success" type="submit">Save</button>
+  <a href="{{ url_for('forums.view_forum', forum_id=post.forum_id) }}" class="btn btn-secondary">Cancel</a>
+</form>
+{% endblock %}
+

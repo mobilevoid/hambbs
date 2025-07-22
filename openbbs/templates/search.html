@@ -2,16 +2,23 @@
 {% block content %}
 <h2>Search</h2>
 <form method="get" action="{{ url_for('main.search') }}" class="mb-3">
-  <div class="input-group">
-    <input class="form-control" type="text" name="q" placeholder="Search" value="{{ query }}">
-    <button class="btn btn-primary" type="submit">Search</button>
+  <div class="row g-2">
+    <div class="col">
+      <input class="form-control" type="text" name="q" placeholder="Search" value="{{ query }}">
+    </div>
+    <div class="col">
+      <input class="form-control" type="text" name="author" placeholder="Author" value="{{ request.args.get('author', '') }}">
+    </div>
+    <div class="col-auto">
+      <button class="btn btn-primary" type="submit">Search</button>
+    </div>
   </div>
 </form>
 <ul class="list-group">
   {% for post in results %}
   <li class="list-group-item">
     <h5>{{ post.title }} <small class="text-muted">by {{ post.author.username }} at {{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</small></h5>
-    <p>{{ post.body }}</p>
+    <p>{{ post.body[:150] }}{% if post.body|length > 150 %}...{% endif %}</p>
     <p><a href="{{ url_for('forums.view_forum', forum_id=post.forum_id) }}">View Forum</a></p>
   </li>
   {% else %}
