@@ -9,6 +9,20 @@
     <div class="col">
       <input class="form-control" type="text" name="author" placeholder="Author" value="{{ request.args.get('author', '') }}">
     </div>
+    <div class="col">
+      <select class="form-select" name="forum_id">
+        <option value="">All Forums</option>
+        {% for f in forums %}
+        <option value="{{ f.id }}" {% if request.args.get('forum_id', type=int) == f.id %}selected{% endif %}>{{ f.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col">
+      <input class="form-control" type="date" name="start" value="{{ request.args.get('start', '') }}" placeholder="From">
+    </div>
+    <div class="col">
+      <input class="form-control" type="date" name="end" value="{{ request.args.get('end', '') }}" placeholder="To">
+    </div>
     <div class="col-auto">
       <button class="btn btn-primary" type="submit">Search</button>
     </div>
@@ -18,7 +32,11 @@
   {% for post in results %}
   <li class="list-group-item">
     <h5>{{ post.title }} <small class="text-muted">by {{ post.author.username }} at {{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</small></h5>
-    <p>{{ post.body[:150] }}{% if post.body|length > 150 %}...{% endif %}</p>
+    {% set snippet = post.body[:150] %}
+    {% if query %}
+      {% set snippet = snippet|replace(query, '<mark>' ~ query ~ '</mark>') %}
+    {% endif %}
+    <p>{{ snippet|safe }}{% if post.body|length > 150 %}...{% endif %}</p>
     <p><a href="{{ url_for('forums.view_forum', forum_id=post.forum_id) }}">View Forum</a></p>
   </li>
   {% else %}

@@ -108,10 +108,21 @@ def delete_post(post_id):
     post = Post.query.get_or_404(post_id)
     if not _can_modify(post):
         return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
-    if current_user.is_moderator:
-        db.session.delete(post)
-    else:
-        post.deleted = True
+    def _delete_recursive(p: Post, hard: bool):
+        for child in list(p.children):
+            _delete_recursive(child, hard)
+        if hard:
+            for att in list(p.attachments):
+                try:
+                    Path(att.filename).unlink(missing_ok=True)
+                except Exception:
+                    pass
+                db.session.delete(att)
+            db.session.delete(p)
+        else:
+            p.deleted = True
+
+    _delete_recursive(post, current_user.is_moderator)
     db.session.commit()
     try:
         from .forums import get_forum_posts
@@ -154,15 +165,33 @@ def profile(username):
 def search():
     query = request.args.get('q', '').strip()
     author_q = request.args.get('author', '').strip()
+    forum_id = request.args.get('forum_id', type=int)
+    start = request.args.get('start')
+    end = request.args.get('end')
     results = []
     if query:
         like = f"%{query}%"
         q = Post.query.filter(
             (Post.title.ilike(like) | Post.body.ilike(like)) & (Post.deleted == False)
         )
+        if forum_id:
+            q = q.filter(Post.forum_id == forum_id)
+        if start:
+            try:
+                dt = datetime.fromisoformat(start)
+                q = q.filter(Post.timestamp >= dt)
+            except ValueError:
+                pass
+        if end:
+            try:
+                dt = datetime.fromisoformat(end)
+                q = q.filter(Post.timestamp <= dt)
+            except ValueError:
+                pass
         if author_q:
             user = User.query.filter(User.username.ilike(author_q)).first()
             if user:
                 q = q.filter(Post.user_id == user.id)
         results = q.order_by(Post.timestamp.desc()).all()
-    return render_template('search.html', query=query, results=results)
+    forums = Forum.query.all()
+    return render_template('search.html', query=query, results=results, forums=forums)
