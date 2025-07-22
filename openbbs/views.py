@@ -308,6 +308,7 @@ def search():
     forum_id = request.args.get('forum_id', type=int)
     start = request.args.get('start')
     end = request.args.get('end')
+    sort = request.args.get('sort', 'newest')
     results = []
     if query:
         like = f"%{query}%"
@@ -332,6 +333,13 @@ def search():
             user = User.query.filter(User.username.ilike(author_q)).first()
             if user:
                 q = q.filter(Post.user_id == user.id)
-        results = q.order_by(Post.timestamp.desc()).all()
+        if sort == 'oldest':
+            q = q.order_by(Post.timestamp.asc())
+        elif sort == 'replies':
+            from sqlalchemy import func
+            q = q.outerjoin(Post.children).group_by(Post.id).order_by(func.count(Post.id).desc())
+        else:
+            q = q.order_by(Post.timestamp.desc())
+        results = q.all()
     forums = Forum.query.all()
-    return render_template('search.html', query=query, results=results, forums=forums)
+    return render_template('search.html', query=query, results=results, forums=forums, sort=sort)
