@@ -25,6 +25,9 @@
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('main.trash') }}">Trash</a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('main.flags') }}">Flags</a>
+        </li>
         {% endif %}
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('main.profile', username=current_user.username) }}">

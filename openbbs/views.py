@@ -7,7 +7,7 @@ from flask_login import login_required, current_user
 from datetime import datetime
 import hmac
 import hashlib
-from .models import Post, Forum, Attachment, User
+from .models import Post, Forum, Attachment, User, Flag
 from . import db
 from werkzeug.utils import secure_filename
 from pathlib import Path
@@ -195,6 +195,20 @@ def restore_post(post_id):
     return redirect(url_for('main.trash'))
 
 
+@main_bp.route('/post/<int:post_id>/flag', methods=['POST'])
+@login_required
+def flag_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    token = request.form.get('token')
+    if not verify_action_token(post.id, token):
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    reason = request.form.get('reason') or ''
+    flag = Flag(post=post, reporter=current_user, reason=reason)
+    db.session.add(flag)
+    db.session.commit()
+    return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+
+
 @main_bp.route('/post/<int:post_id>/pin', methods=['POST'])
 @login_required
 def pin_post(post_id):
@@ -224,6 +238,50 @@ def unpin_post(post_id):
     if not verify_action_token(post.id, token):
         return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
     post.is_pinned = False
+    db.session.commit()
+    try:
+        from .forums import get_forum_posts
+        get_forum_posts.cache_clear()
+    except Exception:
+        pass
+    return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+
+
+@main_bp.route('/post/<int:post_id>/lock', methods=['POST'])
+@login_required
+def lock_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.parent_id is not None:
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    allowed = current_user.is_moderator or (current_user.id == post.user_id and verify_owner_token(post))
+    if not allowed:
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    token = request.form.get('token')
+    if not verify_action_token(post.id, token):
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    post.is_locked = True
+    db.session.commit()
+    try:
+        from .forums import get_forum_posts
+        get_forum_posts.cache_clear()
+    except Exception:
+        pass
+    return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+
+
+@main_bp.route('/post/<int:post_id>/unlock', methods=['POST'])
+@login_required
+def unlock_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.parent_id is not None:
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    allowed = current_user.is_moderator or (current_user.id == post.user_id and verify_owner_token(post))
+    if not allowed:
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    token = request.form.get('token')
+    if not verify_action_token(post.id, token):
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    post.is_locked = False
     db.session.commit()
     try:
         from .forums import get_forum_posts
@@ -298,6 +356,26 @@ def trash():
         return redirect(url_for('main.index'))
     posts = Post.query.filter_by(deleted=True).order_by(Post.timestamp.desc()).all()
     return render_template('trash.html', posts=posts)
+
+
+@main_bp.route('/flags')
+@login_required
+def flags():
+    if not current_user.is_moderator:
+        return redirect(url_for('main.index'))
+    flags = Flag.query.filter_by(resolved=False).order_by(Flag.timestamp.desc()).all()
+    return render_template('flags.html', flags=flags)
+
+
+@main_bp.route('/flag/<int:flag_id>/resolve', methods=['POST'])
+@login_required
+def resolve_flag(flag_id):
+    if not current_user.is_moderator:
+        return redirect(url_for('main.index'))
+    flg = Flag.query.get_or_404(flag_id)
+    flg.resolved = True
+    db.session.commit()
+    return redirect(url_for('main.flags'))
 
 
 @main_bp.route('/search')
