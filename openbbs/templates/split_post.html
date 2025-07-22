@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Split Post</h2>
+<form method="post">
+  <input type="hidden" name="token" value="{{ token }}">
+  <div class="mb-3">
+    <label class="form-label" for="forum_id">Destination Forum</label>
+    <select class="form-select" name="forum_id" id="forum_id" required>
+      {% for f in forums %}
+      <option value="{{ f.id }}" {% if f.id == post.forum_id %}selected{% endif %}>{{ f.name }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-primary" type="submit">Split</button>
+  <a class="btn btn-secondary" href="{{ url_for('forums.view_forum', forum_id=post.forum_id) }}">Cancel</a>
+</form>
+{% endblock %}
