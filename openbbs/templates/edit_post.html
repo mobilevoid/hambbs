@@ -2,6 +2,7 @@
 {% block content %}
 <h2>Edit Post</h2>
 <form method="post">
+  <input type="hidden" name="token" value="{{ token }}">
   <div class="mb-3">
     <input class="form-control" type="text" name="title" value="{{ post.title }}" required>
   </div>

@@ -5,6 +5,8 @@ import io
 from cryptography.fernet import Fernet
 from flask_login import login_required, current_user
 from datetime import datetime
+import hmac
+import hashlib
 from .models import Post, Forum, Attachment, User
 from . import db
 from werkzeug.utils import secure_filename
@@ -36,6 +38,24 @@ def _can_modify(post: Post) -> bool:
     if current_user.is_moderator:
         return True
     return post.user_id == current_user.id
+
+
+def generate_action_token(post_id: int, user_id: int | None = None) -> str:
+    """Return a signed token for actions on a post."""
+    if user_id is None:
+        user_id = current_user.id
+    key = current_app.config['SECRET_KEY'].encode()
+    msg = f"{post_id}:{user_id}".encode()
+    return hmac.new(key, msg, hashlib.sha256).hexdigest()
+
+
+def verify_action_token(post_id: int, token: str, user_id: int | None = None) -> bool:
+    if user_id is None:
+        user_id = current_user.id
+    expected = generate_action_token(post_id, user_id)
+    return hmac.compare_digest(expected, token or "")
+
+
 
 
 @main_bp.route('/')
@@ -86,6 +106,9 @@ def edit_post(post_id):
     if not _can_modify(post) or post.deleted:
         return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
     if request.method == 'POST':
+        token = request.form.get('token')
+        if not verify_action_token(post.id, token):
+            return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
         title = request.form.get('title')
         body = request.form.get('body')
         if title and body:
@@ -99,7 +122,8 @@ def edit_post(post_id):
             except Exception:
                 pass
             return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
-    return render_template('edit_post.html', post=post)
+    token = generate_action_token(post.id)
+    return render_template('edit_post.html', post=post, token=token)
 
 
 @main_bp.route('/post/<int:post_id>/delete', methods=['POST'])
@@ -107,6 +131,9 @@ def edit_post(post_id):
 def delete_post(post_id):
     post = Post.query.get_or_404(post_id)
     if not _can_modify(post):
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    token = request.form.get('token')
+    if not verify_action_token(post.id, token):
         return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
     def _delete_recursive(p: Post, hard: bool):
         for child in list(p.children):

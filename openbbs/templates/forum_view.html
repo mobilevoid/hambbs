@@ -31,6 +31,7 @@
     <div class="mb-2">
       <a href="{{ url_for('main.edit_post', post_id=post.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
       <form method="post" action="{{ url_for('main.delete_post', post_id=post.id) }}" class="d-inline">
+        <input type="hidden" name="token" value="{{ action_token(post.id) }}">
         <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
       </form>
     </div>
@@ -56,6 +57,7 @@
         <div class="mb-2">
           <a href="{{ url_for('main.edit_post', post_id=reply.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
           <form method="post" action="{{ url_for('main.delete_post', post_id=reply.id) }}" class="d-inline">
+            <input type="hidden" name="token" value="{{ action_token(reply.id) }}">
             <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
           </form>
         </div>
