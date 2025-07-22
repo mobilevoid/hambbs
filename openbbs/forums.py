@@ -32,10 +32,13 @@ def create_forum():
 @login_required
 def view_forum(forum_id):
     forum = Forum.query.get_or_404(forum_id)
-    posts = get_forum_posts(forum_id)
+    posts = get_forum_posts(forum_id, include_deleted=True)
     return render_template('forum_view.html', forum=forum, posts=posts)
 
 
 @lru_cache(maxsize=128)
-def get_forum_posts(forum_id):
-    return Post.query.filter_by(forum_id=forum_id, parent_id=None, deleted=False).order_by(Post.timestamp.desc()).all()
+def get_forum_posts(forum_id, include_deleted=False):
+    q = Post.query.filter_by(forum_id=forum_id, parent_id=None)
+    if not include_deleted:
+        q = q.filter_by(deleted=False)
+    return q.order_by(Post.timestamp.desc()).all()
