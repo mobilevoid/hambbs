@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Deleted Posts</h2>
+<ul class="list-group">
+  {% for post in posts %}
+  <li class="list-group-item">
+    <h5>{{ post.title }} <small class="text-muted">by {{ post.author.username }} at {{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</small></h5>
+    <form method="post" action="{{ url_for('main.restore_post', post_id=post.id) }}" class="d-inline">
+      <input type="hidden" name="token" value="{{ action_token(post.id) }}">
+      <button class="btn btn-sm btn-success" type="submit">Restore</button>
+    </form>
+  </li>
+  {% else %}
+  <li class="list-group-item">No deleted posts</li>
+  {% endfor %}
+</ul>
+{% endblock %}

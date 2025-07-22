@@ -159,6 +159,25 @@ def delete_post(post_id):
     return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
 
 
+@main_bp.route('/post/<int:post_id>/restore', methods=['POST'])
+@login_required
+def restore_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if not current_user.is_moderator:
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    token = request.form.get('token')
+    if not verify_action_token(post.id, token):
+        return redirect(url_for('main.trash'))
+    post.deleted = False
+    db.session.commit()
+    try:
+        from .forums import get_forum_posts
+        get_forum_posts.cache_clear()
+    except Exception:
+        pass
+    return redirect(url_for('main.trash'))
+
+
 @main_bp.route('/attachment/<int:att_id>')
 @login_required
 def get_attachment(att_id):
@@ -185,6 +204,15 @@ def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     posts = Post.query.filter_by(user_id=user.id, deleted=False).order_by(Post.timestamp.desc()).all()
     return render_template('profile.html', user=user, posts=posts)
+
+
+@main_bp.route('/trash')
+@login_required
+def trash():
+    if not current_user.is_moderator:
+        return redirect(url_for('main.index'))
+    posts = Post.query.filter_by(deleted=True).order_by(Post.timestamp.desc()).all()
+    return render_template('trash.html', posts=posts)
 
 
 @main_bp.route('/search')

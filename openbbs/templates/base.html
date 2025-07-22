@@ -20,6 +20,11 @@
           <a class="nav-link" href="{{ url_for('main.index') }}">Forums</a>
         </li>
         {% if current_user.is_authenticated %}
+        {% if current_user.is_moderator %}
+        <li class="nav-item">
+          <a class="nav-link" href="{{ url_for('main.trash') }}">Trash</a>
+        </li>
+        {% endif %}
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('main.profile', username=current_user.username) }}">Profile</a>
         </li>

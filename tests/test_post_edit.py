@@ -104,3 +104,19 @@ def test_invalid_token_prevents_delete(app_ctx, client):
     assert resp.status_code == 302
     assert not Post.query.get(post.id).deleted
 
+
+def test_restore_post(app_ctx, client):
+    mod = create_user('rest_mod', is_mod=True)
+    user = create_user('frank')
+    forum = Forum(name='f6')
+    db.session.add(forum)
+    db.session.commit()
+    post = Post(title='t', body='b', author=user, forum=forum, deleted=True)
+    db.session.add(post)
+    db.session.commit()
+    login(client, 'rest_mod')
+    token = generate_action_token(post.id, mod.id)
+    resp = client.post(f'/post/{post.id}/restore', data={'token': token})
+    assert resp.status_code == 302
+    assert not Post.query.get(post.id).deleted
+
