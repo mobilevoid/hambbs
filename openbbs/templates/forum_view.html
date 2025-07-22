@@ -22,7 +22,12 @@
     {% if post.deleted %}
     <p class="fst-italic text-muted">This post has been deleted</p>
     {% else %}
-    <h5>{{ post.title }} <small class="text-muted">by {{ post.author.username }} at {{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</small></h5>
+    <h5>{{ post.title }} {% if post.is_pinned %}<span class="badge bg-warning text-dark">Pinned</span>{% endif %}
+      <small class="text-muted">by {{ post.author.username }}
+        {% if post.author.is_moderator %}<span class="badge bg-primary">Mod</span>{% endif %}
+        (joined {{ post.author.created_at.strftime('%Y-%m-%d') }})
+        [{{ post.author.reputation }}]
+        at {{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</small></h5>
     {% if post.edited_at %}
     <p class="small text-muted">edited {{ post.edited_at.strftime('%Y-%m-%d %H:%M') }}</p>
     {% endif %}
@@ -34,6 +39,12 @@
         <input type="hidden" name="token" value="{{ action_token(post.id) }}">
         <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
       </form>
+      {% if current_user.is_moderator and post.parent_id is none %}
+      <form method="post" action="{{ url_for(post.is_pinned and 'main.unpin_post' or 'main.pin_post', post_id=post.id) }}" class="d-inline">
+        <input type="hidden" name="token" value="{{ action_token(post.id) }}">
+        <button class="btn btn-sm btn-outline-secondary" type="submit">{{ 'Unpin' if post.is_pinned else 'Pin' }}</button>
+      </form>
+      {% endif %}
     </div>
     {% endif %}
     {% for att in post.attachments %}
@@ -45,7 +56,11 @@
         {% if reply.deleted %}
         <p class="fst-italic text-muted">This post has been deleted</p>
         {% else %}
-        <h6>{{ reply.title }} <small class="text-muted">by {{ reply.author.username }} at {{ reply.timestamp.strftime('%Y-%m-%d %H:%M') }}</small></h6>
+        <h6>{{ reply.title }} <small class="text-muted">by {{ reply.author.username }}
+            {% if reply.author.is_moderator %}<span class="badge bg-primary">Mod</span>{% endif %}
+            (joined {{ reply.author.created_at.strftime('%Y-%m-%d') }})
+            [{{ reply.author.reputation }}]
+            at {{ reply.timestamp.strftime('%Y-%m-%d %H:%M') }}</small></h6>
         {% if reply.edited_at %}
         <p class="small text-muted">edited {{ reply.edited_at.strftime('%Y-%m-%d %H:%M') }}</p>
         {% endif %}

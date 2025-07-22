@@ -26,7 +26,9 @@
         </li>
         {% endif %}
         <li class="nav-item">
-          <a class="nav-link" href="{{ url_for('main.profile', username=current_user.username) }}">Profile</a>
+          <a class="nav-link" href="{{ url_for('main.profile', username=current_user.username) }}">
+            {{ current_user.username }}{% if current_user.is_moderator %} <span class="badge bg-primary">Mod</span>{% endif %}
+          </a>
         </li>
         <li class="nav-item">
           <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>

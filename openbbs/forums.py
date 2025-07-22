@@ -41,4 +41,4 @@ def get_forum_posts(forum_id, include_deleted=False):
     q = Post.query.filter_by(forum_id=forum_id, parent_id=None)
     if not include_deleted:
         q = q.filter_by(deleted=False)
-    return q.order_by(Post.timestamp.desc()).all()
+    return q.order_by(Post.is_pinned.desc(), Post.timestamp.desc()).all()

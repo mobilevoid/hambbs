@@ -10,6 +10,7 @@ class User(db.Model, UserMixin):
     bio = db.Column(db.Text, default="")
     reputation = db.Column(db.Integer, default=0)
     is_moderator = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     posts = db.relationship('Post', backref='author', lazy=True)
 
 
@@ -27,6 +28,7 @@ class Post(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     edited_at = db.Column(db.DateTime)
     deleted = db.Column(db.Boolean, default=False)
+    is_pinned = db.Column(db.Boolean, default=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     forum_id = db.Column(db.Integer, db.ForeignKey('forum.id'), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('post.id'))
