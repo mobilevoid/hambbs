@@ -23,6 +23,13 @@
     <div class="col">
       <input class="form-control" type="date" name="end" value="{{ request.args.get('end', '') }}" placeholder="To">
     </div>
+    <div class="col">
+      <select class="form-select" name="sort">
+        <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+        <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest</option>
+        <option value="replies" {% if sort == 'replies' %}selected{% endif %}>Most Replies</option>
+      </select>
+    </div>
     <div class="col-auto">
       <button class="btn btn-primary" type="submit">Search</button>
     </div>
