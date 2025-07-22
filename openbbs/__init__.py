@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from pathlib import Path
 from cryptography.fernet import Fernet
+from sqlalchemy import inspect, text
 
 from db import init_db
 
@@ -37,7 +38,15 @@ def create_app():
 
     with app.app_context():
         Path(app.config['UPLOAD_FOLDER']).mkdir(exist_ok=True)
+        db.drop_all()
         db.create_all()
+        insp = inspect(db.engine)
+        if 'created_at' not in [c['name'] for c in insp.get_columns('user')]:
+            db.session.execute(text('ALTER TABLE user ADD COLUMN created_at DATETIME'))
+            db.session.commit()
+        if 'is_pinned' not in [c['name'] for c in insp.get_columns('post')]:
+            db.session.execute(text('ALTER TABLE post ADD COLUMN is_pinned BOOLEAN DEFAULT 0'))
+            db.session.commit()
         init_db(DB_NAME)
 
     from .auth import auth_bp

@@ -178,6 +178,44 @@ def restore_post(post_id):
     return redirect(url_for('main.trash'))
 
 
+@main_bp.route('/post/<int:post_id>/pin', methods=['POST'])
+@login_required
+def pin_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if not current_user.is_moderator or post.parent_id is not None:
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    token = request.form.get('token')
+    if not verify_action_token(post.id, token):
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    post.is_pinned = True
+    db.session.commit()
+    try:
+        from .forums import get_forum_posts
+        get_forum_posts.cache_clear()
+    except Exception:
+        pass
+    return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+
+
+@main_bp.route('/post/<int:post_id>/unpin', methods=['POST'])
+@login_required
+def unpin_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if not current_user.is_moderator or post.parent_id is not None:
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    token = request.form.get('token')
+    if not verify_action_token(post.id, token):
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    post.is_pinned = False
+    db.session.commit()
+    try:
+        from .forums import get_forum_posts
+        get_forum_posts.cache_clear()
+    except Exception:
+        pass
+    return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+
+
 @main_bp.route('/attachment/<int:att_id>')
 @login_required
 def get_attachment(att_id):
@@ -203,7 +241,22 @@ def get_attachment(att_id):
 def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     posts = Post.query.filter_by(user_id=user.id, deleted=False).order_by(Post.timestamp.desc()).all()
-    return render_template('profile.html', user=user, posts=posts)
+    token = generate_action_token(user.id)
+    return render_template('profile.html', user=user, posts=posts, token=token)
+
+
+@main_bp.route('/user/<int:user_id>/toggle_mod', methods=['POST'])
+@login_required
+def toggle_mod(user_id):
+    if not current_user.is_moderator:
+        return redirect(url_for('main.profile', username=current_user.username))
+    user = User.query.get_or_404(user_id)
+    token = request.form.get('token')
+    if not verify_action_token(user.id, token):
+        return redirect(url_for('main.profile', username=user.username))
+    user.is_moderator = not user.is_moderator
+    db.session.commit()
+    return redirect(url_for('main.profile', username=user.username))
 
 
 @main_bp.route('/trash')
