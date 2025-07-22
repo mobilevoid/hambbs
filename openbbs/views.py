@@ -7,7 +7,7 @@ from flask_login import login_required, current_user
 from datetime import datetime
 import hmac
 import hashlib
-from .models import Post, Forum, Attachment, User, Flag, PostVersion
+from .models import Post, Forum, Attachment, User, Flag, PostVersion, ModNote
 from . import db
 from werkzeug.utils import secure_filename
 from pathlib import Path
@@ -428,6 +428,24 @@ def toggle_mod(user_id):
     if thread_id:
         args['thread_id'] = thread_id
     return redirect(url_for('main.profile', username=user.username, **args))
+
+
+@main_bp.route('/user/<int:user_id>/warn', methods=['POST'])
+@login_required
+def warn_user(user_id):
+    if not current_user.is_moderator:
+        return redirect(url_for('main.profile', username=current_user.username))
+    user = User.query.get_or_404(user_id)
+    token = request.form.get('token')
+    if not verify_action_token(user.id, token):
+        return redirect(url_for('main.profile', username=user.username))
+    text = request.form.get('text') or ''
+    post_id = request.form.get('post_id', type=int)
+    note = ModNote(text=text, user_id=user.id, mod_id=current_user.id,
+                   post_id=post_id)
+    db.session.add(note)
+    db.session.commit()
+    return redirect(url_for('main.profile', username=user.username))
 
 
 @main_bp.route('/trash')
