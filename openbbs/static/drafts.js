@@ -133,11 +133,43 @@
     });
   }
 
+  function setupDeleteForms(){
+    document.querySelectorAll('.delete-form').forEach(form => {
+      form.addEventListener('submit', e => {
+        const input = form.querySelector('input[name="reason"]');
+        if(input){
+          const val = prompt('Reason for deletion (optional):');
+          input.value = val || '';
+        }
+      });
+    });
+  }
+
+  function setupSearchSuggest(){
+    const box = document.getElementById('global-search');
+    const list = document.getElementById('search-list');
+    if(!box || !list) return;
+    let ctrl;
+    box.addEventListener('input', () => {
+      const q = box.value.trim();
+      if(ctrl) ctrl.abort();
+      if(!q){ list.innerHTML=''; return; }
+      ctrl = new AbortController();
+      fetch('/suggest?q='+encodeURIComponent(q), {signal: ctrl.signal})
+        .then(r => r.json())
+        .then(data => {
+          list.innerHTML = data.results.map(r => `<option value="${r.title}">`).join('');
+        }).catch(()=>{});
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('form.autosave').forEach(setupDraft);
     document.querySelectorAll('form').forEach(setupPreview);
     setupThreadSearch();
     setupShortcuts();
     setupWarnForms();
+    setupDeleteForms();
+    setupSearchSuggest();
   });
 })();
