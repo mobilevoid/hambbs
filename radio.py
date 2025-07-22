@@ -407,16 +407,26 @@ class SimulatedVaraHF(VaraHFClient):
 
 
 def opportunistic_relay(
-    queue: List[bytes], forward_fn: Callable[[bytes], None]
+    queue: List[bytes],
+    forward_fn: Callable[[bytes], None],
+    peer_quality: Optional[Callable[[], float]] = None,
+    own_quality: Optional[Callable[[], float]] = None,
 ) -> None:
-    """Forward queued frames to another peer if possible.
+    """Forward queued frames to another peer when advantageous.
 
-    This is a very small placeholder implementation. In a real system we would
-    inspect link quality reports and only forward when the peer's path to the
-    server is better than our own.
+    The optional ``peer_quality`` and ``own_quality`` callables should return a
+    numeric metric (higher is better) representing the other peer's path to the
+    server and our own path respectively.  Frames are forwarded only when the
+    peer's metric exceeds ours.  If either callable is ``None`` the frame is
+    forwarded unconditionally.  Frames that fail to send remain in *queue* so
+    they may be retried later.
     """
+
     for frame in list(queue):
         try:
+            if peer_quality and own_quality:
+                if peer_quality() <= own_quality():
+                    continue
             forward_fn(frame)
             queue.remove(frame)
         except Exception:
