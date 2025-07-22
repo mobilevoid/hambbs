@@ -10,6 +10,28 @@
   <button class="btn btn-sm btn-outline-secondary" type="submit">{{ 'Revoke Moderator' if user.is_moderator else 'Make Moderator' }}</button>
 </form>
 {% endif %}
+{% if current_user.is_authenticated and current_user.is_moderator and current_user.id != user.id %}
+<form method="post" action="{{ url_for('main.warn_user', user_id=user.id) }}" class="mb-3 warn-form">
+  <input type="hidden" name="token" value="{{ token }}">
+  <input type="hidden" name="post_id" value="">
+  <input type="hidden" name="text" value="">
+  <button class="btn btn-sm btn-outline-warning" type="submit">Add Mod Note</button>
+</form>
+{% endif %}
+{% if (current_user.is_authenticated and current_user.is_moderator) or current_user.id == user.id %}
+{% if user.received_notes %}
+<h3>Mod Notes</h3>
+<ul class="list-group mb-3">
+  {% for n in user.received_notes %}
+  <li class="list-group-item">
+    <small class="text-muted">{{ n.timestamp.strftime('%Y-%m-%d %H:%M') }} by {{ n.moderator.username }}</small>
+    <p>{{ n.text }}</p>
+    {% if n.post %}<small>Post: <a href="{{ url_for('forums.view_forum', forum_id=n.post.forum_id) }}">{{ n.post.title }}</a></small>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+{% endif %}
 <h3>Posts</h3>
 <ul class="list-group">
   {% for p in posts %}

@@ -100,10 +100,26 @@
     });
   }
 
+  function setupWarnForms(){
+    document.querySelectorAll('.warn-form').forEach(form => {
+      form.addEventListener('submit', e => {
+        const input = form.querySelector('input[name="text"]');
+        if(!input) return;
+        const val = prompt('Enter warning note:');
+        if(!val){
+          e.preventDefault();
+          return;
+        }
+        input.value = val;
+      });
+    });
+  }
+
   document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('form.autosave').forEach(setupDraft);
     document.querySelectorAll('form').forEach(setupPreview);
     setupThreadSearch();
     setupShortcuts();
+    setupWarnForms();
   });
 })();

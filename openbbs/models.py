@@ -13,6 +13,10 @@ class User(db.Model, UserMixin):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     posts = db.relationship('Post', backref='author', lazy=True)
     flags = db.relationship('Flag', backref='reporter', lazy=True)
+    received_notes = db.relationship('ModNote', foreign_keys='ModNote.user_id',
+                                     backref='target', lazy=True)
+    sent_notes = db.relationship('ModNote', foreign_keys='ModNote.mod_id',
+                                 backref='moderator', lazy=True)
 
 
 class Forum(db.Model):
@@ -64,6 +68,15 @@ class PostVersion(db.Model):
     body = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
+
+
+class ModNote(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    mod_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'))
 
 
 @login_manager.user_loader
