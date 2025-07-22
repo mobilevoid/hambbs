@@ -417,6 +417,45 @@ def move_post(post_id):
     return render_template("move_post.html", post=post, forums=forums, token=token)
 
 
+@main_bp.route("/post/<int:post_id>/split", methods=["GET", "POST"])
+@login_required
+def split_post(post_id):
+    """Split a reply into a new root topic."""
+    post = Post.query.get_or_404(post_id)
+    if post.parent_id is None:
+        # Can't split a root post
+        return redirect(url_for("forums.view_forum", forum_id=post.forum_id))
+    if not current_user.is_moderator:
+        return redirect(url_for("forums.view_forum", forum_id=post.forum_id))
+    if request.method == "POST":
+        token = request.form.get("token")
+        if not verify_action_token(post.id, token):
+            return redirect(url_for("forums.view_forum", forum_id=post.forum_id))
+        forum_id = request.form.get("forum_id", type=int)
+        forum = Forum.query.get(forum_id)
+        if forum:
+
+            def _move_recursive(p: Post):
+                p.forum_id = forum_id
+                for child in p.children:
+                    _move_recursive(child)
+
+            _move_recursive(post)
+            post.parent_id = None
+            post.owner_token = generate_owner_token(post.id, post.user_id)
+            db.session.commit()
+            try:
+                from .forums import get_forum_posts
+
+                get_forum_posts.cache_clear()
+            except Exception:
+                pass
+            return redirect(url_for("forums.view_forum", forum_id=forum_id))
+    forums = Forum.query.all()
+    token = generate_action_token(post.id)
+    return render_template("split_post.html", post=post, forums=forums, token=token)
+
+
 @main_bp.route("/attachment/<int:att_id>")
 @login_required
 def get_attachment(att_id):

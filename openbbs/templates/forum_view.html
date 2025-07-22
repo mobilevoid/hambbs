@@ -115,6 +115,7 @@
           <input type="hidden" name="text" value="">
           <button class="btn btn-sm btn-outline-warning" type="submit">Warn</button>
         </form>
+        <a href="{{ url_for('main.split_post', post_id=reply.id) }}" class="btn btn-sm btn-outline-secondary ms-1">Split</a>
         {% endif %}
       </div>
       {% endif %}
