@@ -38,6 +38,8 @@ class Post(db.Model):
     children = db.relationship('Post', backref=db.backref('parent', remote_side=[id]), lazy=True)
     attachments = db.relationship('Attachment', backref='post', lazy=True)
     flags = db.relationship('Flag', backref='post', lazy=True)
+    versions = db.relationship('PostVersion', backref='post', lazy=True,
+                               order_by="PostVersion.timestamp.desc()")
 
 
 class Attachment(db.Model):
@@ -54,6 +56,14 @@ class Flag(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+
+class PostVersion(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(255), nullable=False)
+    body = db.Column(db.Text, nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+    post_id = db.Column(db.Integer, db.ForeignKey('post.id'), nullable=False)
 
 
 @login_manager.user_loader
