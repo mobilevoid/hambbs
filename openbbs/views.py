@@ -7,7 +7,7 @@ from flask_login import login_required, current_user
 from datetime import datetime
 import hmac
 import hashlib
-from .models import Post, Forum, Attachment, User, Flag
+from .models import Post, Forum, Attachment, User, Flag, PostVersion
 from . import db
 from werkzeug.utils import secure_filename
 from pathlib import Path
@@ -139,6 +139,8 @@ def edit_post(post_id):
         title = request.form.get('title')
         body = request.form.get('body')
         if title and body:
+            ver = PostVersion(title=post.title, body=post.body, post=post)
+            db.session.add(ver)
             post.title = title
             post.body = body
             post.edited_at = datetime.utcnow()
@@ -203,6 +205,43 @@ def restore_post(post_id):
     except Exception:
         pass
     return redirect(url_for('main.trash'))
+
+
+@main_bp.route('/post/<int:post_id>/history')
+@login_required
+def post_history(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.deleted:
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    versions = PostVersion.query.filter_by(post_id=post.id).order_by(PostVersion.timestamp.desc()).all()
+    token = generate_action_token(post.id)
+    return render_template('history.html', post=post, versions=versions, token=token)
+
+
+@main_bp.route('/post/<int:post_id>/revert/<int:ver_id>', methods=['POST'])
+@login_required
+def revert_post(post_id, ver_id):
+    post = Post.query.get_or_404(post_id)
+    if not _can_modify(post) or post.deleted:
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    token = request.form.get('token')
+    if not verify_action_token(post.id, token):
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    ver = PostVersion.query.get_or_404(ver_id)
+    if ver.post_id != post.id:
+        return redirect(url_for('forums.view_forum', forum_id=post.forum_id))
+    new_ver = PostVersion(title=post.title, body=post.body, post=post)
+    db.session.add(new_ver)
+    post.title = ver.title
+    post.body = ver.body
+    post.edited_at = datetime.utcnow()
+    db.session.commit()
+    try:
+        from .forums import get_forum_posts
+        get_forum_posts.cache_clear()
+    except Exception:
+        pass
+    return redirect(url_for('main.post_history', post_id=post.id))
 
 
 @main_bp.route('/post/<int:post_id>/flag', methods=['POST'])

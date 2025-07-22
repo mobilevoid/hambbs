@@ -16,6 +16,7 @@
   <span class="draft-indicator">You have an unsaved draft</span>
   <button class="btn btn-success" type="submit">Save</button>
   <a href="{{ url_for('forums.view_forum', forum_id=post.forum_id) }}" class="btn btn-secondary">Cancel</a>
+  <a href="{{ url_for('main.post_history', post_id=post.id) }}" class="btn btn-link">History</a>
 </form>
 {% endblock %}
 

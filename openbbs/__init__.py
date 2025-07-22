@@ -34,7 +34,7 @@ def create_app():
     db.init_app(app)
     login_manager.init_app(app)
 
-    from .models import User, Post, Forum, Attachment, Flag
+    from .models import User, Post, Forum, Attachment, Flag, PostVersion
 
     with app.app_context():
         Path(app.config['UPLOAD_FOLDER']).mkdir(exist_ok=True)

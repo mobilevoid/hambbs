@@ -44,7 +44,8 @@
     <p>{{ post.body }}</p>
     {% if current_user.is_authenticated and (current_user.is_moderator or current_user.id == post.user_id) %}
     <div class="mb-2">
-      <a href="{{ url_for('main.edit_post', post_id=post.id) }}" class="btn btn-sm btn-outline-primary shortcut-edit">Edit</a>
+        <a href="{{ url_for('main.edit_post', post_id=post.id) }}" class="btn btn-sm btn-outline-primary shortcut-edit">Edit</a>
+        <a href="{{ url_for('main.post_history', post_id=post.id) }}" class="btn btn-sm btn-outline-secondary">History</a>
       <form method="post" action="{{ url_for('main.delete_post', post_id=post.id) }}" class="d-inline">
         <input type="hidden" name="token" value="{{ action_token(post.id) }}">
         <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
@@ -91,6 +92,7 @@
         {% if current_user.is_authenticated and (current_user.is_moderator or current_user.id == reply.user_id) %}
         <div class="mb-2">
           <a href="{{ url_for('main.edit_post', post_id=reply.id) }}" class="btn btn-sm btn-outline-primary shortcut-edit">Edit</a>
+          <a href="{{ url_for('main.post_history', post_id=reply.id) }}" class="btn btn-sm btn-outline-secondary">History</a>
           <form method="post" action="{{ url_for('main.delete_post', post_id=reply.id) }}" class="d-inline">
             <input type="hidden" name="token" value="{{ action_token(reply.id) }}">
             <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>

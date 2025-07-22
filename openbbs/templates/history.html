@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block content %}
+<a class="btn btn-link" href="{{ url_for('forums.view_forum', forum_id=post.forum_id) }}">&larr; Back</a>
+<h2>History for "{{ post.title }}"</h2>
+<ul class="list-group mb-3">
+  {% for ver in versions %}
+  <li class="list-group-item">
+    <h6>{{ ver.timestamp.strftime('%Y-%m-%d %H:%M') }}</h6>
+    <p>{{ ver.body }}</p>
+    {% if loop.index0 == 0 %}
+      <span class="badge bg-secondary">Current</span>
+    {% else %}
+    <form method="post" action="{{ url_for('main.revert_post', post_id=post.id, ver_id=ver.id) }}" class="d-inline">
+      <input type="hidden" name="token" value="{{ token }}">
+      <button class="btn btn-sm btn-outline-primary" type="submit">Revert</button>
+    </form>
+    {% endif %}
+  </li>
+  {% else %}
+  <li class="list-group-item">No history</li>
+  {% endfor %}
+</ul>
+{% endblock %}
