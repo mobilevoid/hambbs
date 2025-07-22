@@ -23,7 +23,7 @@
     <p class="fst-italic text-muted">This post has been deleted</p>
     {% else %}
     <h5>{{ post.title }} {% if post.is_pinned %}<span class="badge bg-warning text-dark">Pinned</span>{% endif %}
-      <small class="text-muted">by {{ post.author.username }}
+      <small class="text-muted">by <a href="{{ url_for('main.profile', username=post.author.username, thread_id=post.id) }}">{{ post.author.username }}</a>
         {% if post.author.is_moderator %}<span class="badge bg-primary">Mod</span>{% endif %}
         (joined {{ post.author.created_at.strftime('%Y-%m-%d') }})
         [{{ post.author.reputation }}]
@@ -56,7 +56,7 @@
         {% if reply.deleted %}
         <p class="fst-italic text-muted">This post has been deleted</p>
         {% else %}
-        <h6>{{ reply.title }} <small class="text-muted">by {{ reply.author.username }}
+        <h6>{{ reply.title }} <small class="text-muted">by <a href="{{ url_for('main.profile', username=reply.author.username, thread_id=post.id) }}">{{ reply.author.username }}</a>
             {% if reply.author.is_moderator %}<span class="badge bg-primary">Mod</span>{% endif %}
             (joined {{ reply.author.created_at.strftime('%Y-%m-%d') }})
             [{{ reply.author.reputation }}]

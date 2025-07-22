@@ -56,6 +56,21 @@ def verify_action_token(post_id: int, token: str, user_id: int | None = None) ->
     return hmac.compare_digest(expected, token or "")
 
 
+def generate_owner_token(post_id: int, user_id: int) -> str:
+    """Return a signed token representing permanent thread ownership."""
+    key = current_app.config['SECRET_KEY'].encode()
+    msg = f"owner:{post_id}:{user_id}".encode()
+    return hmac.new(key, msg, hashlib.sha256).hexdigest()
+
+
+def verify_owner_token(post: Post) -> bool:
+    """Verify the stored owner token for a root post."""
+    if not post.owner_token:
+        return False
+    expected = generate_owner_token(post.id, post.user_id)
+    return hmac.compare_digest(expected, post.owner_token)
+
+
 
 
 @main_bp.route('/')
@@ -77,6 +92,8 @@ def create_post():
                     forum_id=forum_id, parent_id=parent_id)
         db.session.add(post)
         db.session.flush()  # to get id before committing
+        if parent_id is None:
+            post.owner_token = generate_owner_token(post.id, current_user.id)
         file = request.files.get('attachment')
         if file and file.filename:
             filename = secure_filename(file.filename)
@@ -241,14 +258,26 @@ def get_attachment(att_id):
 def profile(username):
     user = User.query.filter_by(username=username).first_or_404()
     posts = Post.query.filter_by(user_id=user.id, deleted=False).order_by(Post.timestamp.desc()).all()
+    thread_id = request.args.get('thread_id', type=int)
+    owner = False
+    if thread_id:
+        thread = Post.query.get(thread_id)
+        if thread and thread.parent_id is None and thread.user_id == current_user.id:
+            owner = verify_owner_token(thread)
     token = generate_action_token(user.id)
-    return render_template('profile.html', user=user, posts=posts, token=token)
+    return render_template('profile.html', user=user, posts=posts, token=token, owner=owner, thread_id=thread_id)
 
 
 @main_bp.route('/user/<int:user_id>/toggle_mod', methods=['POST'])
 @login_required
 def toggle_mod(user_id):
-    if not current_user.is_moderator:
+    thread_id = request.form.get('thread_id', type=int)
+    allowed = current_user.is_moderator
+    if not allowed and thread_id:
+        thread = Post.query.get(thread_id)
+        if thread and thread.parent_id is None and thread.user_id == current_user.id:
+            allowed = verify_owner_token(thread)
+    if not allowed:
         return redirect(url_for('main.profile', username=current_user.username))
     user = User.query.get_or_404(user_id)
     token = request.form.get('token')
@@ -256,7 +285,10 @@ def toggle_mod(user_id):
         return redirect(url_for('main.profile', username=user.username))
     user.is_moderator = not user.is_moderator
     db.session.commit()
-    return redirect(url_for('main.profile', username=user.username))
+    args = {}
+    if thread_id:
+        args['thread_id'] = thread_id
+    return redirect(url_for('main.profile', username=user.username, **args))
 
 
 @main_bp.route('/trash')
