@@ -17,6 +17,7 @@ Additional usage information is available in [docs/USAGE.md](docs/USAGE.md).
 - Support for VARA Terminal's KISS serial mode via `VaraKISS`
 - REST API for threads/messages and lightweight offline UI
 - Local SQLite storage with sync log
+- Thread owners can grant moderator status via signed ownership tokens
 
 ## Setup
 

@@ -9,6 +9,7 @@ This guide provides an overview of running the server, using the web interface a
 3. Navigate to `http://localhost:5000` in your browser.
 
 On first launch you can sign up for a new account. Forums and posts are stored in a local SQLite database `openbbs.db`.
+Thread owners can promote other users to moderator status by visiting their profile from the thread page.
 
 ## Command Line Interface
 

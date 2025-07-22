@@ -29,6 +29,7 @@ class Post(db.Model):
     edited_at = db.Column(db.DateTime)
     deleted = db.Column(db.Boolean, default=False)
     is_pinned = db.Column(db.Boolean, default=False)
+    owner_token = db.Column(db.String(64))
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     forum_id = db.Column(db.Integer, db.ForeignKey('forum.id'), nullable=False)
     parent_id = db.Column(db.Integer, db.ForeignKey('post.id'))

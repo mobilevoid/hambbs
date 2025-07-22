@@ -3,9 +3,10 @@
 <h2>{{ user.username }}'s Profile {% if user.is_moderator %}<span class="badge bg-primary">Mod</span>{% endif %}</h2>
 <p>{{ user.bio }}</p>
 <p>Joined {{ user.created_at.strftime('%Y-%m-%d') }} | Reputation: {{ user.reputation }}</p>
-{% if current_user.is_authenticated and current_user.is_moderator and current_user.id != user.id %}
+{% if current_user.is_authenticated and current_user.id != user.id and (current_user.is_moderator or owner) %}
 <form method="post" action="{{ url_for('main.toggle_mod', user_id=user.id) }}" class="mb-3">
   <input type="hidden" name="token" value="{{ token }}">
+  {% if thread_id %}<input type="hidden" name="thread_id" value="{{ thread_id }}">{% endif %}
   <button class="btn btn-sm btn-outline-secondary" type="submit">{{ 'Revoke Moderator' if user.is_moderator else 'Make Moderator' }}</button>
 </form>
 {% endif %}
