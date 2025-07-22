@@ -20,17 +20,39 @@
   {% for post in posts %}
   <li class="list-group-item">
     <h5>{{ post.title }} <small class="text-muted">by {{ post.author.username }} at {{ post.timestamp.strftime('%Y-%m-%d %H:%M') }}</small></h5>
+    {% if post.edited_at %}
+    <p class="small text-muted">edited {{ post.edited_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    {% endif %}
     <p>{{ post.body }}</p>
+    {% if current_user.is_authenticated and (current_user.is_moderator or current_user.id == post.user_id) %}
+    <div class="mb-2">
+      <a href="{{ url_for('main.edit_post', post_id=post.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+      <form method="post" action="{{ url_for('main.delete_post', post_id=post.id) }}" class="d-inline">
+        <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+      </form>
+    </div>
+    {% endif %}
     {% for att in post.attachments %}
     <p><a href="{{ url_for('main.get_attachment', att_id=att.id) }}">{{ att.original_name }}</a></p>
     {% endfor %}
-    {% for reply in post.children %}
+    {% for reply in post.children if not reply.deleted %}
     <div class="mt-3 ms-3 border-start ps-3">
       <h6>{{ reply.title }} <small class="text-muted">by {{ reply.author.username }} at {{ reply.timestamp.strftime('%Y-%m-%d %H:%M') }}</small></h6>
+      {% if reply.edited_at %}
+      <p class="small text-muted">edited {{ reply.edited_at.strftime('%Y-%m-%d %H:%M') }}</p>
+      {% endif %}
       <p>{{ reply.body }}</p>
       {% for ratt in reply.attachments %}
       <p><a href="{{ url_for('main.get_attachment', att_id=ratt.id) }}">{{ ratt.original_name }}</a></p>
       {% endfor %}
+      {% if current_user.is_authenticated and (current_user.is_moderator or current_user.id == reply.user_id) %}
+      <div class="mb-2">
+        <a href="{{ url_for('main.edit_post', post_id=reply.id) }}" class="btn btn-sm btn-outline-primary">Edit</a>
+        <form method="post" action="{{ url_for('main.delete_post', post_id=reply.id) }}" class="d-inline">
+          <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+        </form>
+      </div>
+      {% endif %}
     </div>
     {% endfor %}
     <form method="post" action="{{ url_for('main.create_post') }}" enctype="multipart/form-data" class="mt-3">
