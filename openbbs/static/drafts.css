@@ -1,2 +1,3 @@
 .draft-indicator{display:none;color:#d63384;font-size:0.9em;}
 form.draft-exists .draft-indicator{display:inline;}
+mark{background-color:#ffe599;padding:0 2px;}

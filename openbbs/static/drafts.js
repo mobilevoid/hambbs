@@ -64,12 +64,24 @@
     const input = document.getElementById('thread-search');
     if(!input) return;
     const items = document.querySelectorAll('#posts-list .post-item');
+    const originals = new Map();
+    items.forEach(it => originals.set(it, it.innerHTML));
     input.addEventListener('input', () => {
       const q = input.value.toLowerCase();
       items.forEach(it => {
+        it.innerHTML = originals.get(it);
         const text = it.innerText.toLowerCase();
-        if(text.includes(q)) it.classList.remove('d-none');
-        else it.classList.add('d-none');
+        if(!q){
+          it.classList.remove('d-none');
+          return;
+        }
+        if(text.includes(q)){
+          it.classList.remove('d-none');
+          const regex = new RegExp('('+q.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&')+')', 'gi');
+          it.innerHTML = it.innerHTML.replace(regex, '<mark>$1</mark>');
+        }else{
+          it.classList.add('d-none');
+        }
       });
     });
   }
@@ -95,6 +107,12 @@
         if(flag){
           e.preventDefault();
           flag.submit();
+        }
+      } else if(key === '/' || key === 's'){
+        const search = document.getElementById('global-search');
+        if(search){
+          e.preventDefault();
+          search.focus();
         }
       }
     });
