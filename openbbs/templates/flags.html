@@ -10,6 +10,11 @@
       <input type="hidden" name="token" value="{{ action_token(flg.post.id) }}">
       <button class="btn btn-sm btn-outline-success" type="submit">Resolve</button>
     </form>
+    <form method="post" action="{{ url_for('main.delete_flagged_post', flag_id=flg.id) }}" class="d-inline delete-form ms-1">
+      <input type="hidden" name="token" value="{{ action_token(flg.post.id) }}">
+      <input type="hidden" name="reason" value="">
+      <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
+    </form>
     <a href="{{ url_for('forums.view_forum', forum_id=flg.post.forum_id) }}" class="btn btn-sm btn-link">View</a>
   </li>
   {% else %}

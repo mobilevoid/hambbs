@@ -3,3 +3,6 @@ __pycache__/
 uploads/*
 !uploads/.gitkeep
 sync.log
+openbbs.db
+encryption.key
+instance/

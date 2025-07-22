@@ -28,7 +28,7 @@
   {% for post in posts %}
   <li class="list-group-item post-item" id="post{{ post.id }}">
     {% if post.deleted %}
-    <p class="fst-italic text-muted">This post has been deleted</p>
+    <p class="fst-italic text-muted">This post has been deleted{% if post.delete_reason %}: {{ post.delete_reason }}{% endif %}</p>
     {% else %}
     <h5>{{ post.title }}
       {% if post.is_pinned %}<span class="badge bg-warning text-dark">Pinned</span>{% endif %}
@@ -46,8 +46,9 @@
     <div class="mb-2">
         <a href="{{ url_for('main.edit_post', post_id=post.id) }}" class="btn btn-sm btn-outline-primary shortcut-edit">Edit</a>
         <a href="{{ url_for('main.post_history', post_id=post.id) }}" class="btn btn-sm btn-outline-secondary">History</a>
-      <form method="post" action="{{ url_for('main.delete_post', post_id=post.id) }}" class="d-inline">
+      <form method="post" action="{{ url_for('main.delete_post', post_id=post.id) }}" class="d-inline delete-form">
         <input type="hidden" name="token" value="{{ action_token(post.id) }}">
+        {% if current_user.is_moderator %}<input type="hidden" name="reason" value="">{% endif %}
         <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
       </form>
       {% if current_user.is_moderator and post.parent_id is none %}
@@ -84,7 +85,7 @@
     {% for reply in post.children %}
       <div class="mt-3 ms-3 border-start ps-3" id="post{{ reply.id }}">
         {% if reply.deleted %}
-        <p class="fst-italic text-muted">This post has been deleted</p>
+        <p class="fst-italic text-muted">This post has been deleted{% if reply.delete_reason %}: {{ reply.delete_reason }}{% endif %}</p>
         {% else %}
         <h6>{{ reply.title }} <small class="text-muted">by <a href="{{ url_for('main.profile', username=reply.author.username, thread_id=post.id) }}">{{ reply.author.username }}</a>
             {% if reply.author.is_moderator %}<span class="badge bg-primary">Mod</span>{% endif %}
@@ -102,8 +103,9 @@
         <div class="mb-2">
           <a href="{{ url_for('main.edit_post', post_id=reply.id) }}" class="btn btn-sm btn-outline-primary shortcut-edit">Edit</a>
           <a href="{{ url_for('main.post_history', post_id=reply.id) }}" class="btn btn-sm btn-outline-secondary">History</a>
-        <form method="post" action="{{ url_for('main.delete_post', post_id=reply.id) }}" class="d-inline">
+        <form method="post" action="{{ url_for('main.delete_post', post_id=reply.id) }}" class="d-inline delete-form">
           <input type="hidden" name="token" value="{{ action_token(reply.id) }}">
+          {% if current_user.is_moderator %}<input type="hidden" name="reason" value="">{% endif %}
           <button class="btn btn-sm btn-outline-danger" type="submit">Delete</button>
         </form>
         {% if current_user.is_moderator and current_user.id != reply.user_id %}

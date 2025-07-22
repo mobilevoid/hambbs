@@ -13,7 +13,8 @@
     <a class="navbar-brand" href="{{ url_for('main.index') }}">OpenBBS</a>
     <div class="collapse navbar-collapse">
       <form class="d-flex me-auto" method="get" action="{{ url_for('main.search') }}">
-        <input class="form-control me-2" id="global-search" aria-label="Search site" type="search" name="q" placeholder="Search">
+        <input class="form-control me-2" id="global-search" list="search-list" aria-label="Search site" type="search" name="q" placeholder="Search">
+        <datalist id="search-list"></datalist>
         <button class="btn btn-outline-success" type="submit">Search</button>
       </form>
       <ul class="navbar-nav ms-auto">
