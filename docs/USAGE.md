@@ -11,6 +11,7 @@ This guide provides an overview of running the server, using the web interface a
 On first launch you can sign up for a new account. Forums and posts are stored in a local SQLite database `openbbs.db`.
 Thread owners can promote other users to moderator status by visiting their profile from the thread page.
 The web interface supports several keyboard shortcuts: press `N` to start a new topic, `E` to edit a post, `F` to flag content and `/` to jump to the search box. Text entered in the thread search field highlights matching posts.
+A theme switch in the navigation bar lets you toggle dark mode, with your preference stored locally.
 
 ## Command Line Interface
 
