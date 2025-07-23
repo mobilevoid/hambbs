@@ -5,11 +5,13 @@ from pathlib import Path
 from . import db as sqldb  # SQLAlchemy instance not used but required for models
 from sync import SyncEngine
 from db import init_db
+from functools import lru_cache
 
 sync_bp = Blueprint('sync_api', __name__, url_prefix='/api/sync')
 
+@lru_cache(maxsize=1)
 def get_engine():
-    db_path = Path('openbbs.db')
+    db_path = Path('openbbs.db').resolve()
     init_db(db_path)
     return SyncEngine(str(db_path))
 

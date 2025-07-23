@@ -19,6 +19,7 @@ Additional usage information is available in [docs/USAGE.md](docs/USAGE.md).
 - Local SQLite storage with sync log
 - Thread owners can grant moderator status via signed ownership tokens
 - Keyboard shortcuts for quick actions and "/" to focus the search box
+- Optional dark mode toggle for better readability
 
 ## Setup
 

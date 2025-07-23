@@ -21,6 +21,7 @@ from . import db
 from werkzeug.utils import secure_filename
 from pathlib import Path
 import markdown
+from functools import lru_cache
 
 main_bp = Blueprint("main", __name__)
 
@@ -81,6 +82,29 @@ def verify_owner_token(post: Post) -> bool:
     return hmac.compare_digest(expected, post.owner_token)
 
 
+@lru_cache(maxsize=256)
+def _suggest_titles_cached(q: str) -> list[dict]:
+    """Return a list of title suggestions for search boxes."""
+    like = f"%{q}%"
+    posts = (
+        Post.query.filter(
+            Post.title.ilike(like), Post.parent_id == None, Post.deleted == False
+        )
+        .order_by(Post.timestamp.desc())
+        .limit(5)
+        .all()
+    )
+    return [{"id": p.id, "title": p.title} for p in posts]
+
+
+def clear_suggest_cache() -> None:
+    """Clear cached title suggestions."""
+    try:
+        _suggest_titles_cached.cache_clear()
+    except Exception:
+        pass
+
+
 @main_bp.route("/preview", methods=["POST"])
 @login_required
 def preview_markdown():
@@ -132,6 +156,7 @@ def create_post():
             from .forums import get_forum_posts
 
             get_forum_posts.cache_clear()
+            clear_suggest_cache()
         except Exception:
             pass
     if forum_id:
@@ -162,6 +187,7 @@ def edit_post(post_id):
                 from .forums import get_forum_posts
 
                 get_forum_posts.cache_clear()
+                clear_suggest_cache()
             except Exception:
                 pass
             return redirect(url_for("forums.view_forum", forum_id=post.forum_id))
@@ -210,6 +236,7 @@ def delete_post(post_id):
         from .forums import get_forum_posts
 
         get_forum_posts.cache_clear()
+        clear_suggest_cache()
     except Exception:
         pass
     return redirect(url_for("forums.view_forum", forum_id=post.forum_id))
@@ -231,6 +258,7 @@ def restore_post(post_id):
         from .forums import get_forum_posts
 
         get_forum_posts.cache_clear()
+        clear_suggest_cache()
     except Exception:
         pass
     return redirect(url_for("main.trash"))
@@ -273,6 +301,7 @@ def revert_post(post_id, ver_id):
         from .forums import get_forum_posts
 
         get_forum_posts.cache_clear()
+        clear_suggest_cache()
     except Exception:
         pass
     return redirect(url_for("main.post_history", post_id=post.id))
@@ -307,6 +336,7 @@ def pin_post(post_id):
         from .forums import get_forum_posts
 
         get_forum_posts.cache_clear()
+        clear_suggest_cache()
     except Exception:
         pass
     return redirect(url_for("forums.view_forum", forum_id=post.forum_id))
@@ -327,6 +357,7 @@ def unpin_post(post_id):
         from .forums import get_forum_posts
 
         get_forum_posts.cache_clear()
+        clear_suggest_cache()
     except Exception:
         pass
     return redirect(url_for("forums.view_forum", forum_id=post.forum_id))
@@ -352,6 +383,7 @@ def lock_post(post_id):
         from .forums import get_forum_posts
 
         get_forum_posts.cache_clear()
+        clear_suggest_cache()
     except Exception:
         pass
     return redirect(url_for("forums.view_forum", forum_id=post.forum_id))
@@ -377,6 +409,7 @@ def unlock_post(post_id):
         from .forums import get_forum_posts
 
         get_forum_posts.cache_clear()
+        clear_suggest_cache()
     except Exception:
         pass
     return redirect(url_for("forums.view_forum", forum_id=post.forum_id))
@@ -409,6 +442,7 @@ def move_post(post_id):
                 from .forums import get_forum_posts
 
                 get_forum_posts.cache_clear()
+                clear_suggest_cache()
             except Exception:
                 pass
             return redirect(url_for("forums.view_forum", forum_id=forum_id))
@@ -448,6 +482,7 @@ def split_post(post_id):
                 from .forums import get_forum_posts
 
                 get_forum_posts.cache_clear()
+                clear_suggest_cache()
             except Exception:
                 pass
             return redirect(url_for("forums.view_forum", forum_id=forum_id))
@@ -614,6 +649,7 @@ def delete_flagged_post(flag_id):
         from .forums import get_forum_posts
 
         get_forum_posts.cache_clear()
+        clear_suggest_cache()
     except Exception:
         pass
     return redirect(url_for("main.flags"))
@@ -625,16 +661,7 @@ def suggest():
     q = request.args.get("q", "").strip()
     results: list[dict] = []
     if q:
-        like = f"%{q}%"
-        posts = (
-            Post.query.filter(
-                Post.title.ilike(like), Post.parent_id == None, Post.deleted == False
-            )
-            .order_by(Post.timestamp.desc())
-            .limit(5)
-            .all()
-        )
-        results = [{"id": p.id, "title": p.title} for p in posts]
+        results = _suggest_titles_cached(q)
     return {"results": results}
 
 
