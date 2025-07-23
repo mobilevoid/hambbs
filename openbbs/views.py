@@ -11,7 +11,6 @@ from flask import (
 import gzip
 import tempfile
 import io
-from cryptography.fernet import Fernet
 from flask_login import login_required, current_user
 from datetime import datetime
 import hmac
@@ -26,20 +25,14 @@ from functools import lru_cache
 main_bp = Blueprint("main", __name__)
 
 
-def _fernet() -> Fernet:
-    """Return a Fernet instance using the app's encryption key."""
-    key = current_app.config["ENCRYPTION_KEY"]
-    return Fernet(key)
-
-
 def encrypt_attachment(data: bytes) -> bytes:
-    compressed = gzip.compress(data)
-    return _fernet().encrypt(compressed)
+    """Compress *data* with gzip."""
+    return gzip.compress(data)
 
 
 def decrypt_attachment(data: bytes) -> bytes:
-    decrypted = _fernet().decrypt(data)
-    return gzip.decompress(decrypted)
+    """Decompress gzipped *data*."""
+    return gzip.decompress(data)
 
 
 def _can_modify(post: Post) -> bool:
@@ -144,11 +137,11 @@ def create_post():
         if file and file.filename:
             filename = secure_filename(file.filename)
             upload_folder = Path(current_app.config["UPLOAD_FOLDER"])
-            dest = upload_folder / f"{post.id}_{filename}.gz.enc"
+            dest = upload_folder / f"{post.id}_{filename}.gz"
             data = file.read()
-            enc = encrypt_attachment(data)
+            comp = encrypt_attachment(data)
             with open(dest, "wb") as f:
-                f.write(enc)
+                f.write(comp)
             att = Attachment(filename=str(dest), original_name=filename, post=post)
             db.session.add(att)
         db.session.commit()
@@ -494,15 +487,9 @@ def split_post(post_id):
 @main_bp.route("/attachment/<int:att_id>")
 @login_required
 def get_attachment(att_id):
-    """Return the attachment file, decrypting and decompressing if needed."""
+    """Return the attachment file, decompressing if needed."""
     att = Attachment.query.get_or_404(att_id)
     path = Path(att.filename)
-    if path.suffix == ".enc":
-        data = path.read_bytes()
-        data = decrypt_attachment(data)
-        return send_file(
-            io.BytesIO(data), as_attachment=True, download_name=att.original_name
-        )
     if path.suffix == ".gz":
         with gzip.open(path, "rb") as f:
             data = f.read()
