@@ -8,7 +8,7 @@ Additional usage information is available in [docs/USAGE.md](docs/USAGE.md).
 
 - User signup and login
 - Forums with threads and replies
-- File attachments on posts with encrypted gzip compression
+- File attachments on posts with gzip compression (no encryption)
 - SQLite database via SQLAlchemy
 - Simple web interface using Bootstrap
 - Synchronization API and CLI tools
@@ -52,4 +52,4 @@ python bbs.py sync push package.tar.zst
 
 ## Notes
 
-Radio communication supports the VaraHF modem over TCP and includes a KISS TNC compatibility layer. The `VaraKISS` helper lets you talk to VARA Terminal in its KISS serial mode. File attachments are encrypted and compressed for safe transfer.
+Radio communication supports the VaraHF modem over TCP and includes a KISS TNC compatibility layer. The `VaraKISS` helper lets you talk to VARA Terminal in its KISS serial mode. File attachments are gzip compressed for safe transfer and are stored unencrypted.
